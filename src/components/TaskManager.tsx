@@ -19,7 +19,8 @@ import {
   MapPin,
   Play,
   Square,
-  Loader2
+  Loader2,
+  Pause
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -115,8 +116,14 @@ export const TaskManager: React.FC = () => {
           const location = formatLocation(position);
           
           if (status === 'in_progress') {
-            updateData.start_location = location;
-            updateData.started_at = new Date().toISOString();
+            // Если задача была на паузе, не перезаписываем start_location
+            const currentTask = tasks.find(t => t.id === taskId);
+            if (!currentTask?.start_location) {
+              updateData.start_location = location;
+              updateData.started_at = new Date().toISOString();
+            }
+            // Сбрасываем время паузы при возобновлении
+            updateData.paused_at = null;
           } else if (status === 'completed') {
             updateData.end_location = location;
             updateData.completed_at = new Date().toISOString();
@@ -128,6 +135,9 @@ export const TaskManager: React.FC = () => {
             return;
           }
         }
+      } else if (status === 'paused') {
+        // При постановке на паузу сохраняем время паузы
+        updateData.paused_at = new Date().toISOString();
       }
 
       const { error } = await supabase
@@ -173,6 +183,7 @@ export const TaskManager: React.FC = () => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'paused': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'pending': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -234,6 +245,7 @@ export const TaskManager: React.FC = () => {
               <option value="all">Все задачи</option>
               <option value="pending">Ожидают</option>
               <option value="in_progress">В работе</option>
+             <option value="paused">На паузе</option>
               <option value="completed">Завершены</option>
             </select>
           </div>
@@ -274,6 +286,7 @@ export const TaskManager: React.FC = () => {
               } ${
                 profile?.role === 'worker' && task.status === 'pending' ? 'border-l-yellow-400' :
                 profile?.role === 'worker' && task.status === 'in_progress' ? 'border-l-blue-400' :
+               profile?.role === 'worker' && task.status === 'paused' ? 'border-l-yellow-400' :
                 profile?.role === 'worker' && task.status === 'completed' ? 'border-l-green-400' :
                 'border-l-gray-200'
               }`}
@@ -303,7 +316,8 @@ export const TaskManager: React.FC = () => {
                     profile?.role === 'worker' ? 'text-sm px-3 py-1' : 'text-xs'
                   }`}>
                     {task.status === 'completed' ? 'Завершена' :
-                     task.status === 'in_progress' ? 'В работе' : 'Ожидает'}
+                     task.status === 'in_progress' ? 'В работе' :
+                     task.status === 'paused' ? 'На паузе' : 'Ожидает'}
                   </span>
                 </div>
               </div>
@@ -336,6 +350,17 @@ export const TaskManager: React.FC = () => {
                       </span>
                       <span className="text-blue-600 font-medium">
                         {task.completed_at && format(new Date(task.completed_at), 'dd.MM HH:mm', { locale: ru })}
+                      </span>
+                    </div>
+                  )}
+                  {task.paused_at && (
+                    <div className="flex items-center justify-between text-sm mt-2">
+                      <span className="text-gray-600 flex items-center space-x-1">
+                        <Pause className="w-3 h-3" />
+                        <span>Приостановлено:</span>
+                      </span>
+                      <span className="text-yellow-600 font-medium">
+                        {format(new Date(task.paused_at), 'dd.MM HH:mm', { locale: ru })}
                       </span>
                     </div>
                   )}
@@ -458,6 +483,18 @@ export const TaskManager: React.FC = () => {
                     )}
                   </>
                 )}
+                
+                {task.paused_at && (
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="text-gray-600 flex items-center space-x-1">
+                      <Pause className="w-4 h-4" />
+                      <span>Приостановлено:</span>
+                    </span>
+                    <span className="text-yellow-600 font-medium">
+                      {format(new Date(task.paused_at), 'dd.MM HH:mm', { locale: ru })}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Worker actions */}
@@ -479,21 +516,53 @@ export const TaskManager: React.FC = () => {
                       )}
                     </button>
                   )}
-                  {task.status === 'in_progress' && (
+                  {task.status === 'paused' && (
                     <button
-                      onClick={() => updateTaskStatus(task.id, 'completed')}
+                      onClick={() => updateTaskStatus(task.id, 'in_progress')}
                       disabled={updatingTask === task.id}
-                      className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                      className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                     >
                       {updatingTask === task.id ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
-                          <Square className="w-5 h-5" />
-                          <span>Завершить работу</span>
+                          <Play className="w-5 h-5" />
+                          <span>Продолжить работу</span>
                         </>
                       )}
                     </button>
+                  )}
+                  {task.status === 'in_progress' && (
+                    <>
+                      <button
+                        onClick={() => updateTaskStatus(task.id, 'paused')}
+                        disabled={updatingTask === task.id}
+                        className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {updatingTask === task.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Pause className="w-4 h-4" />
+                            <span>Приостановить</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => updateTaskStatus(task.id, 'completed')}
+                        disabled={updatingTask === task.id}
+                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {updatingTask === task.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <>
+                            <Square className="w-5 h-5" />
+                            <span>Завершить работу</span>
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               )}

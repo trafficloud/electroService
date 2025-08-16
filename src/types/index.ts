@@ -13,7 +13,7 @@ export interface Task {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'paused' | 'completed';
   assigned_to: string;
   created_by: string;
   estimated_hours?: number;
@@ -21,6 +21,8 @@ export interface Task {
   end_location?: string;
   started_at?: string;
   completed_at?: string;
+  paused_at?: string;
+  total_pause_time?: number;
   created_at: string;
   updated_at: string;
   assignee?: User;
