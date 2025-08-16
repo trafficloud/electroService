@@ -33,11 +33,17 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
-  // Check if there's an active session before attempting logout
   const { data: { session } } = await supabase.auth.getSession();
   
   // If no session exists, treat as successful logout
   if (!session) {
+    return { error: null };
+  }
+  
+  // Check if session is already expired locally
+  const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+  if (session.expires_at && session.expires_at < currentTime) {
+    // Session is already expired, no need to call logout
     return { error: null };
   }
   
