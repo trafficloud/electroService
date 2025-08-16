@@ -34,11 +34,11 @@ export const signIn = async (email: string, password: string) => {
   if (data.user && !error) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('role')
+      .select('role, is_active')
       .eq('id', data.user.id)
       .single();
     
-    if (profileError || profile?.role === 'inactive') {
+    if (profileError || profile?.role === 'inactive' || profile?.is_active === false) {
       // Sign out the user if they are inactive
       await supabase.auth.signOut();
       return { 
@@ -83,11 +83,11 @@ export const getCurrentUser = async () => {
   if (user) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('role')
+      .select('role, is_active')
       .eq('id', user.id)
       .single();
     
-    if (profileError || profile?.role === 'inactive') {
+    if (profileError || profile?.role === 'inactive' || profile?.is_active === false) {
       // Sign out the user if they are inactive
       await supabase.auth.signOut();
       return null;

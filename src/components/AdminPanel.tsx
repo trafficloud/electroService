@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut } from '../lib/supabase';
 import { User, RoleChangeLog } from '../types';
+import { EmployeeForm } from './EmployeeForm';
 import { 
   Users, 
   Shield, 
@@ -13,7 +14,9 @@ import {
   Search,
   Filter,
   ChevronDown,
-  History
+  History,
+  Plus,
+  UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -30,6 +33,8 @@ export const AdminPanel: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'users' | 'logs'>('users');
   const [updating, setUpdating] = useState(false);
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -92,11 +97,10 @@ export const AdminPanel: React.FC = () => {
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     setUpdating(true);
     try {
-      const newRole = currentStatus ? 'inactive' : 'worker';
       const { data, error } = await supabase
         .from('users')
         .update({ 
-          role: newRole,
+          is_active: !currentStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId)
@@ -209,6 +213,14 @@ export const AdminPanel: React.FC = () => {
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => setShowEmployeeForm(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Добавить сотрудника</span>
+              </button>
+
               <div className="flex-1 relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                 <input
@@ -322,11 +334,11 @@ export const AdminPanel: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.role !== 'inactive' 
+                            user.is_active && user.role !== 'inactive'
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
+                            {user.is_active && user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
                           </span>
                         </td>
                         <td className="py-4 px-6 text-sm text-gray-900">
@@ -345,21 +357,29 @@ export const AdminPanel: React.FC = () => {
                           {editingUser !== user.id && user.id !== profile?.id && (
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => startEditing(user.id, user.role)}
+                                onClick={() => setEditingEmployee(user)}
                                 className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                               >
                                 <Edit3 className="w-4 h-4" />
-                                <span className="text-sm">Изменить</span>
+                                <span className="text-sm">Редактировать</span>
+                              </button>
+                              <button
+                                onClick={() => startEditing(user.id, user.role)}
+                                className="text-purple-600 hover:text-purple-700 flex items-center space-x-1"
+                              >
+                                <Shield className="w-4 h-4" />
+                                <span className="text-sm">Роль</span>
                               </button>
                               <button
                                 onClick={() => toggleUserStatus(user.id, user.role !== 'inactive')}
-                                className={`text-sm px-2 py-1 rounded ${
-                                  user.role !== 'inactive' 
+                                onClick={() => toggleUserStatus(user.id, user.is_active && user.role !== 'inactive')}
+                                className={`text-sm px-2 py-1 rounded transition-colors ${
+                                  user.is_active && user.role !== 'inactive'
                                     ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
                                     : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                                 }`}
                               >
-                                {user.role !== 'inactive' ? 'Деактивировать' : 'Активировать'}
+                                {user.is_active && user.role !== 'inactive' ? 'Деактивировать' : 'Активировать'}
                               </button>
                             </div>
                           )}
@@ -423,6 +443,29 @@ export const AdminPanel: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Employee Form Modal */}
+      {showEmployeeForm && (
+        <EmployeeForm
+          onClose={() => setShowEmployeeForm(false)}
+          onSuccess={() => {
+            setShowEmployeeForm(false);
+            fetchUsers();
+          }}
+        />
+      )}
+
+      {/* Edit Employee Modal */}
+      {editingEmployee && (
+        <EmployeeForm
+          user={editingEmployee}
+          onClose={() => setEditingEmployee(null)}
+          onSuccess={() => {
+            setEditingEmployee(null);
+            fetchUsers();
+          }}
+        />
       )}
     </div>
   );
