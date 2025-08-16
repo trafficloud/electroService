@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, getCurrentLocation, formatLocation } from '../lib/supabase';
 import { Task, User, Material } from '../types';
+import { MapButton } from './MapDisplay';
 import { 
   Plus, 
   CheckSquare, 
@@ -346,6 +347,48 @@ export const TaskManager: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-3">
                   <UserIcon className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-600">{task.assignee.full_name}</span>
+                </div>
+              )}
+
+              {/* Location info for managers */}
+              {profile?.role === 'manager' && (task.start_location || task.end_location) && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Геолокация</span>
+                  </div>
+                  
+                  {task.start_location && task.started_at && (
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-gray-600">Начато:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-600 font-medium">
+                          {format(new Date(task.started_at), 'dd.MM HH:mm', { locale: ru })}
+                        </span>
+                        <MapButton
+                          coordinates={task.start_location}
+                          title={`Начало работы: ${task.title}`}
+                          variant="start"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {task.end_location && task.completed_at && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Завершено:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-blue-600 font-medium">
+                          {format(new Date(task.completed_at), 'dd.MM HH:mm', { locale: ru })}
+                        </span>
+                        <MapButton
+                          coordinates={task.end_location}
+                          title={`Завершение работы: ${task.title}`}
+                          variant="end"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

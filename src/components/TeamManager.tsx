@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
 import { User, WorkSession, Task } from '../types';
+import { MapDisplay } from './MapDisplay';
 import { 
   Users, 
   Mail, 
@@ -14,7 +15,8 @@ import {
   Award,
   Calendar,
   Phone,
-  MapPin
+  MapPin,
+  Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -31,6 +33,9 @@ interface TeamMember extends User {
 export const TeamManager: React.FC = () => {
   const { profile } = useAuth();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [memberTasks, setMemberTasks] = useState<Task[]>([]);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -39,6 +44,21 @@ export const TeamManager: React.FC = () => {
   useEffect(() => {
     fetchTeamData();
   }, []);
+
+  const fetchMemberTasks = async (memberId: string) => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('assigned_to', memberId)
+      .not('start_location', 'is', null)
+      .or('end_location.not.is.null')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!error && data) {
+      setMemberTasks(data);
+    }
+  };
 
   const fetchTeamData = async () => {
     setLoading(true);
@@ -367,11 +387,195 @@ export const TeamManager: React.FC = () => {
                     <div className="text-xs text-gray-500">Заработано</div>
                   </div>
                 </div>
+
+                {/* Location tracking button for managers */}
+                {(profile?.role === 'manager' || profile?.role === 'director') && (
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => {
+                        setSelectedMember(member);
+                        fetchMemberTasks(member.id);
+                        setShowLocationModal(true);
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 py-2 px-3 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span>Посмотреть локации</span>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Location Modal */}
+      {showLocationModal && selectedMember && (
+        <LocationModal
+          member={selectedMember}
+          tasks={memberTasks}
+          onClose={() => {
+            setShowLocationModal(false);
+            setSelectedMember(null);
+            setMemberTasks([]);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Location Modal Component
+interface LocationModalProps {
+  member: TeamMember;
+  tasks: Task[];
+  onClose: () => void;
+}
+
+const LocationModal: React.FC<LocationModalProps> = ({ member, tasks, onClose }) => {
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [viewType, setViewType] = useState<'start' | 'end'>('start');
+
+  const tasksWithLocations = tasks.filter(task => 
+    task.start_location || task.end_location
+  );
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Геолокации: {member.full_name}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                История местоположений при выполнении задач
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-2"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex h-96">
+          {/* Tasks List */}
+          <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
+            <div className="p-4">
+              <h3 className="font-medium text-gray-900 mb-3">Задачи с геолокацией</h3>
+              {tasksWithLocations.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">Нет данных о геолокации</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {tasksWithLocations.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedTask?.id === task.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedTask(task)}
+                    >
+                      <div className="font-medium text-sm text-gray-900 mb-1">
+                        {task.title}
+                      </div>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        {task.start_location && (
+                          <div className="flex items-center space-x-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span>Начато: {task.started_at && format(new Date(task.started_at), 'dd.MM HH:mm', { locale: ru })}</span>
+                          </div>
+                        )}
+                        {task.end_location && (
+                          <div className="flex items-center space-x-1">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span>Завершено: {task.completed_at && format(new Date(task.completed_at), 'dd.MM HH:mm', { locale: ru })}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Map Display */}
+          <div className="flex-1 flex flex-col">
+            {selectedTask ? (
+              <>
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900">{selectedTask.title}</h4>
+                    <div className="flex space-x-2">
+                      {selectedTask.start_location && (
+                        <button
+                          onClick={() => setViewType('start')}
+                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                            viewType === 'start'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Начало
+                        </button>
+                      )}
+                      {selectedTask.end_location && (
+                        <button
+                          onClick={() => setViewType('end')}
+                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                            viewType === 'end'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Завершение
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  {viewType === 'start' && selectedTask.start_location ? (
+                    <MapDisplay
+                      coordinates={selectedTask.start_location}
+                      title={`Начало: ${selectedTask.title}`}
+                    />
+                  ) : viewType === 'end' && selectedTask.end_location ? (
+                    <MapDisplay
+                      coordinates={selectedTask.end_location}
+                      title={`Завершение: ${selectedTask.title}`}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <div className="text-center">
+                        <MapPin className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p>Нет данных о геолокации для выбранного типа</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="text-center">
+                  <Eye className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p>Выберите задачу для просмотра геолокации</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
