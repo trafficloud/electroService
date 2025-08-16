@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Truck } from 'lucide-react';
-import { Task, getPriorityLabel } from '@/lib/workerState';
+import { Task } from '../../types';
 
 interface CurrentTaskCardProps {
   task: Task | null;
@@ -12,6 +12,15 @@ interface CurrentTaskCardProps {
   onMoveStart: (taskId: string) => void;
   loading: boolean;
 }
+
+const getPriorityLabel = (priority: string) => {
+  switch (priority) {
+    case 'high': return 'Высокий';
+    case 'medium': return 'Средний';
+    case 'low': return 'Низкий';
+    default: return 'Средний';
+  }
+};
 
 export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart, loading }: CurrentTaskCardProps) {
   if (!task) {
@@ -38,10 +47,10 @@ export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart
       </div>
       
       <div className="text-slate-800 font-medium mb-1">{task.title}</div>
-      <div className="text-sm text-slate-500 mb-2">{task.address}</div>
-      {task.estimateHrs && (
+      <div className="text-sm text-slate-500 mb-2">{task.description}</div>
+      {task.estimated_hours && (
         <div className="text-sm text-slate-500 mb-3">
-          Оценка времени: {task.estimateHrs} ч
+          Оценка времени: {task.estimated_hours} ч
         </div>
       )}
 
@@ -76,13 +85,13 @@ export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart
         В путь
       </Button>
 
-      {task.materials.length > 0 && (
+      {task.task_materials && task.task_materials.length > 0 && (
         <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
           <div className="font-medium mb-1">Материалы:</div>
-          {task.materials.map((material, idx) => (
-            <span key={idx}>
-              {material.name} ({material.qty} {material.unit || 'шт'})
-              {idx < task.materials.length - 1 ? ', ' : ''}
+          {task.task_materials.map((tm, idx) => (
+            <span key={tm.id}>
+              {tm.material?.name} ({tm.quantity_needed} {tm.material?.default_unit || 'шт'})
+              {idx < task.task_materials.length - 1 ? ', ' : ''}
             </span>
           ))}
           <div className="mt-2 text-xs text-slate-500">
