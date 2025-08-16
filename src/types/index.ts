@@ -28,6 +28,15 @@ export interface Task {
   materials?: TaskMaterial[];
 }
 
+export interface TaskMaterial {
+  id: string;
+  task_id: string;
+  material_id: string;
+  quantity_needed: number;
+  quantity_used?: number;
+  material?: Material;
+}
+
 export interface WorkSession {
   id: string;
   user_id: string;
@@ -110,15 +119,6 @@ export interface MaterialSupplierPrice {
   last_updated: string;
   notes?: string;
   supplier?: Supplier;
-}
-
-export interface TaskMaterial {
-  id: string;
-  task_id: string;
-  material_id: string;
-  quantity_needed: number;
-  quantity_used?: number;
-  material?: Material;
 }
 
 export interface MaterialUsage {

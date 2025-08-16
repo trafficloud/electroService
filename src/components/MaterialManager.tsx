@@ -127,14 +127,14 @@ export const MaterialManager: React.FC = () => {
   const getTotalStock = (material: Material) => {
     if (!material.inventory) return 0;
     return material.inventory
-      .filter(inv => inv.location_type === 'warehouse')
+      .filter((inv: any) => inv.location_type === 'warehouse')
       .reduce((sum, inv) => sum + inv.quantity, 0);
   };
 
   const getOnSiteStock = (material: Material) => {
     if (!material.inventory) return 0;
     return material.inventory
-      .filter(inv => inv.location_type === 'on_site')
+      .filter((inv: any) => inv.location_type === 'on_site')
       .reduce((sum, inv) => sum + inv.quantity, 0);
   };
 

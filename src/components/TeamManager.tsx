@@ -456,7 +456,7 @@ const LocationModal: React.FC<LocationModalProps> = ({ member, tasks, onClose })
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-2"
+              className="text-gray-400 hover:text-gray-600 p-2 flex items-center justify-center"
             >
               <X className="w-6 h-6" />
             </button>
