@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Clock } from 'lucide-react';
+import { Zap, Clock, LogOut } from 'lucide-react';
 import { ShiftStatus } from '@/lib/workerState';
 
 interface HeaderStatusProps {
@@ -8,6 +8,7 @@ interface HeaderStatusProps {
   geoVerified: boolean;
   outside: boolean;
   currentTime: string;
+  onLogout?: () => void;
 }
 
 function geoBadgeText(geoVerified: boolean, outside: boolean): string {
@@ -23,7 +24,7 @@ function getStatusLabel(status: ShiftStatus): string {
   }
 }
 
-export function HeaderStatus({ status, geoVerified, outside, currentTime }: HeaderStatusProps) {
+export function HeaderStatus({ status, geoVerified, outside, currentTime, onLogout }: HeaderStatusProps) {
   const statusLabel = getStatusLabel(status);
   
   return (
@@ -38,7 +39,7 @@ export function HeaderStatus({ status, geoVerified, outside, currentTime }: Head
             <div className="text-base font-semibold">Рабочий экран</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
             status === 'running'
               ? 'bg-green-100 text-green-800'
@@ -54,6 +55,15 @@ export function HeaderStatus({ status, geoVerified, outside, currentTime }: Head
               {geoBadgeText(geoVerified, outside)}
             </Badge>
           </span>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center justify-center w-9 h-9 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Выйти"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { supabase, getCurrentLocation, formatLocation } from '../../lib/supabase';
+import { supabase, getCurrentLocation, formatLocation, signOut } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { WorkSession, Task } from '../../types';
 import { HeaderStatus } from './HeaderStatus';
@@ -475,6 +475,17 @@ export function WorkerSuperScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    if (currentSession && !currentSession.end_time) {
+      const shouldLogout = confirm(
+        'У вас активная смена. Выйти из системы без завершения смены?'
+      );
+      if (!shouldLogout) return;
+    }
+    
+    await signOut();
+  };
+
   const shiftStatus = getShiftStatus();
   const mainCtaLabel = shiftStatus === 'idle' 
     ? (outside ? 'Начать (unverified)' : 'Начать работу')
@@ -487,6 +498,7 @@ export function WorkerSuperScreen() {
         geoVerified={geoVerified}
         outside={outside}
         currentTime={currentTime.toLocaleTimeString('ru-RU')}
+        onLogout={handleLogout}
       />
 
       {/* Табы */}
