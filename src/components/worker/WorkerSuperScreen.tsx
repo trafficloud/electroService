@@ -10,6 +10,7 @@ import { EarningsToday } from './EarningsToday';
 import { HistoryMini } from './HistoryMini';
 import { Button } from '@/components/ui/button';
 import { mainCtaLabel } from '@/lib/workerState';
+import { Truck } from 'lucide-react';
 
 export function WorkerSuperScreen() {
   const { state, actions } = useWorkerState();
