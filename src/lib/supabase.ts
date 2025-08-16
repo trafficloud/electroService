@@ -33,6 +33,14 @@ export const signIn = async (email: string, password: string) => {
 };
 
 export const signOut = async () => {
+  // Check if there's an active session before attempting logout
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  // If no session exists, treat as successful logout
+  if (!session) {
+    return { error: null };
+  }
+  
   const { error } = await supabase.auth.signOut();
   
   // If session doesn't exist, treat as successful logout
