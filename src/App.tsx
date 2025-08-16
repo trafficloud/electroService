@@ -4,6 +4,7 @@ import { Auth } from './components/Auth';
 import { Layout } from './components/Layout';
 import { WorkerSuperScreen } from './components/worker/WorkerSuperScreen';
 import { AdminPanel } from './components/AdminPanel';
+import { Dashboard } from './components/Dashboard';
 import { Toaster } from './components/ui/toaster';
 import { hasValidCredentials } from './lib/supabase';
 
@@ -59,10 +60,7 @@ function App() {
   return (
     <>
       <Layout currentView={currentView} onNavigate={setCurrentView}>
-        <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Добро пожаловать!</h2>
-          <p className="text-gray-600">Выберите раздел в навигации выше</p>
-        </div>
+        <Dashboard currentView={currentView} onNavigate={setCurrentView} />
       </Layout>
       <Toaster />
     </>
