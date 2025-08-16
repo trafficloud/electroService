@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { supabase, getCurrentLocation, formatLocation, signOut } from '../../lib/supabase';
+import { supabase, getCurrentLocation, formatLocation, signOut, calculateDistance, parseCoordinates } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { WorkSession, Task } from '../../types';
 import { HeaderStatus } from './HeaderStatus';
@@ -340,6 +340,54 @@ export function WorkerSuperScreen() {
       return;
     }
 
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Check location if target_location is specified
+    if (task.target_location) {
+      try {
+        const currentPosition = await getCurrentLocation();
+        const currentCoords = {
+          lat: currentPosition.coords.latitude,
+          lon: currentPosition.coords.longitude
+        };
+        
+        const targetCoords = parseCoordinates(task.target_location);
+        
+        if (targetCoords) {
+          const distance = calculateDistance(
+            currentCoords.lat,
+            currentCoords.lon,
+            targetCoords.lat,
+            targetCoords.lon
+          );
+          
+          // If distance is more than 100 meters, show warning
+          if (distance > 100) {
+            const shouldContinue = confirm(
+              `Вы находитесь на расстоянии ${Math.round(distance)} м от объекта задачи.\n\nПродолжить выполнение задачи?`
+            );
+            if (!shouldContinue) {
+              return;
+            }
+          } else {
+            toast({
+              title: "Местоположение подтверждено",
+              description: `Вы находитесь в ${Math.round(distance)} м от объекта`,
+              variant: "success",
+            });
+          }
+        }
+      } catch (locationError) {
+        console.warn('Location check failed:', locationError);
+        const shouldContinue = confirm(
+          'Не удалось проверить ваше местоположение. Продолжить без проверки?'
+        );
+        if (!shouldContinue) {
+          return;
+        }
+      }
+    }
     setLoading(true);
     try {
       let location = null;

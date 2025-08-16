@@ -48,6 +48,12 @@ export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart
       
       <div className="text-slate-800 font-medium mb-1">{task.title}</div>
       <div className="text-sm text-slate-500 mb-2">{task.description}</div>
+      {task.target_location && (
+        <div className="text-sm text-slate-600 mb-2 flex items-center space-x-1">
+          <span>📍</span>
+          <span>Объект: {task.target_location}</span>
+        </div>
+      )}
       {task.estimated_hours && (
         <div className="text-sm text-slate-500 mb-3">
           Оценка времени: {task.estimated_hours} ч

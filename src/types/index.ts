@@ -2,8 +2,13 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'worker' | 'manager' | 'director' | 'admin';
+  role: 'worker' | 'manager' | 'director' | 'admin' | 'inactive';
   hourly_rate?: number;
+  is_active?: boolean;
+  passport_series?: string;
+  passport_number?: string;
+  passport_issue_date?: string;
+  passport_issued_by?: string;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +24,7 @@ export interface Task {
   estimated_hours?: number;
   start_location?: string;
   end_location?: string;
+  target_location?: string;
   started_at?: string;
   completed_at?: string;
   paused_at?: string;

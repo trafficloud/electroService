@@ -233,7 +233,13 @@ export const AdminPanel: React.FC = () => {
                         Роль
                       </th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Статус
+                      </th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Ставка
+                      </th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Паспорт
                       </th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Дата регистрации
@@ -286,21 +292,48 @@ export const AdminPanel: React.FC = () => {
                             </span>
                           )}
                         </td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.is_active !== false && user.role !== 'inactive' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.is_active !== false && user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
+                          </span>
+                        </td>
                         <td className="py-4 px-6 text-sm text-gray-900">
                           {user.hourly_rate ? `${user.hourly_rate} ₽/ч` : '—'}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-900">
+                          {user.passport_series && user.passport_number 
+                            ? `${user.passport_series} ${user.passport_number}` 
+                            : '—'
+                          }
                         </td>
                         <td className="py-4 px-6 text-sm text-gray-500">
                           {format(new Date(user.created_at), 'dd MMM yyyy', { locale: ru })}
                         </td>
                         <td className="py-4 px-6">
                           {editingUser !== user.id && user.id !== profile?.id && (
-                            <button
-                              onClick={() => startEditing(user.id, user.role)}
-                              className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                              <span className="text-sm">Изменить</span>
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => startEditing(user.id, user.role)}
+                                className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                                <span className="text-sm">Изменить</span>
+                              </button>
+                              <button
+                                onClick={() => toggleUserStatus(user.id, user.is_active !== false)}
+                                className={`text-sm px-2 py-1 rounded ${
+                                  user.is_active !== false 
+                                    ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
+                                    : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                                }`}
+                              >
+                                {user.is_active !== false ? 'Деактивировать' : 'Активировать'}
+                              </button>
+                            </div>
                           )}
                           {user.id === profile?.id && (
                             <span className="text-xs text-gray-400">Это вы</span>

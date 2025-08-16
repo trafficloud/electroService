@@ -638,6 +638,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     priority: (task?.priority || 'medium') as Task['priority'],
     assigned_to: task?.assigned_to || '',
     estimated_hours: task?.estimated_hours?.toString() || '',
+    target_location: task?.target_location || '',
   });
   const [selectedMaterials, setSelectedMaterials] = useState<Array<{
     id?: string;
@@ -674,6 +675,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             ...formData,
             estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
             updated_at: new Date().toISOString(),
+            target_location: formData.target_location || null,
           })
           .eq('id', task.id)
           .select()
@@ -695,6 +697,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             ...formData,
             created_by: profile.id,
             estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
+            target_location: formData.target_location || null,
           })
           .select()
           .single();
@@ -827,6 +830,22 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   placeholder="0"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Адрес объекта
+              </label>
+              <input
+                type="text"
+                value={formData.target_location}
+                onChange={(e) => setFormData({ ...formData, target_location: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Адрес или координаты (например: 55.7558, 37.6173)"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Укажите адрес или координаты в формате "широта, долгота"
+              </p>
             </div>
 
             {/* Materials */}
