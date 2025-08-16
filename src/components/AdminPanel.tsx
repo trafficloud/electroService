@@ -92,11 +92,11 @@ export const AdminPanel: React.FC = () => {
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     setUpdating(true);
     try {
-      const newStatus = !currentStatus;
+      const newRole = currentStatus ? 'inactive' : 'worker';
       const { data, error } = await supabase
         .from('users')
         .update({ 
-          is_active: newStatus,
+          role: newRole,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId)
@@ -107,7 +107,7 @@ export const AdminPanel: React.FC = () => {
       
       await fetchUsers();
       
-      console.log(`Пользователь ${newStatus ? 'активирован' : 'деактивирован'}`);
+      console.log(`Пользователь ${!currentStatus ? 'активирован' : 'деактивирован'}`);
     } catch (error) {
       console.error('Error updating user status:', error);
       alert(`Ошибка при изменении статуса пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
@@ -322,11 +322,11 @@ export const AdminPanel: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.is_active !== false && user.role !== 'inactive' 
+                            user.role !== 'inactive' 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {user.is_active !== false && user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
+                            {user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
                           </span>
                         </td>
                         <td className="py-4 px-6 text-sm text-gray-900">
@@ -352,14 +352,14 @@ export const AdminPanel: React.FC = () => {
                                 <span className="text-sm">Изменить</span>
                               </button>
                               <button
-                                onClick={() => toggleUserStatus(user.id, user.is_active !== false)}
+                                onClick={() => toggleUserStatus(user.id, user.role !== 'inactive')}
                                 className={`text-sm px-2 py-1 rounded ${
-                                  user.is_active !== false 
+                                  user.role !== 'inactive' 
                                     ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
                                     : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                                 }`}
                               >
-                                {user.is_active !== false ? 'Деактивировать' : 'Активировать'}
+                                {user.role !== 'inactive' ? 'Деактивировать' : 'Активировать'}
                               </button>
                             </div>
                           )}

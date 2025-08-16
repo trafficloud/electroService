@@ -34,16 +34,16 @@ export const signIn = async (email: string, password: string) => {
   if (data.user && !error) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('is_active, role')
+      .select('role')
       .eq('id', data.user.id)
       .single();
     
-    if (profileError || !profile?.is_active || profile?.role === 'inactive') {
+    if (profileError || profile?.role === 'inactive') {
       // Sign out the user if they are inactive
       await supabase.auth.signOut();
       return { 
         data: null, 
-        error: { message: 'Аккаунт деактивирован. Обратитесь к администратору.' } 
+        error: { message: 'Аккаунт неактивен. Обратитесь к администратору.' } 
       };
     }
   }
@@ -83,11 +83,11 @@ export const getCurrentUser = async () => {
   if (user) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('is_active, role')
+      .select('role')
       .eq('id', user.id)
       .single();
     
-    if (profileError || !profile?.is_active || profile?.role === 'inactive') {
+    if (profileError || profile?.role === 'inactive') {
       // Sign out the user if they are inactive
       await supabase.auth.signOut();
       return null;
