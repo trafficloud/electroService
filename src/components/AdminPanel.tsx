@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { supabase } from '../lib/supabase';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
@@ -83,6 +84,33 @@ export const AdminPanel: React.FC = () => {
       } else {
         alert(`Ошибка при обновлении роли: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
       }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    setUpdating(true);
+    try {
+      const newStatus = !currentStatus;
+      const { data, error } = await supabase
+        .from('users')
+        .update({ 
+          is_active: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      
+      await fetchUsers();
+      
+      console.log(`Пользователь ${newStatus ? 'активирован' : 'деактивирован'}`);
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert(`Ошибка при изменении статуса пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setUpdating(false);
     }
