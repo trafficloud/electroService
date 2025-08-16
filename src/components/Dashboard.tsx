@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { TimeTracker } from './TimeTracker';
 import { TaskManager } from './TaskManager';
 import { MaterialManager } from './MaterialManager';
 import { TeamManager } from './TeamManager';
+import { supabase } from '../lib/supabase';
 import { 
   Clock, 
   CheckSquare, 
@@ -229,6 +230,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentView = 'dashboard',
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Быстрые действия</h2>
           <AdminQuickActions onNavigate={onNavigate} />
         </div>
+      )}
+        </>
+      )}
+    </div>
+  );
+};
 
 // Компонент быстрых действий для админа
 interface AdminQuickActionsProps {
@@ -326,22 +333,18 @@ const AdminQuickActions: React.FC<AdminQuickActionsProps> = ({ onNavigate }) => 
           onClick={action.onClick}
           className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer group"
         >
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+          <div className="flex items-center space-x-3">
             <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
               <action.icon className="w-5 h-5" />
-              <div>
-                <div className="text-2xl font-bold text-gray-900">-</div>
+            </div>
+            <div>
               <div className="text-2xl font-bold text-gray-900">{action.value}</div>
               <div className="text-sm text-gray-500">{action.label}</div>
             </div>
           </div>
           <div className="text-xs text-gray-400 mt-2">{action.description}</div>
         </div>
-      )}
-        </>
-      )}
+      ))}
     </div>
   );
 };
