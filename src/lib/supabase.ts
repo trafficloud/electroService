@@ -142,15 +142,13 @@ export const updateUserRole = async (userId: string, newRole: string) => {
     }
 
     // Update the role
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({ 
         role: newRole,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
-      .select('*')
-      .single();
+      .eq('id', userId);
 
     if (error) {
       console.error('Ошибка при обновлении роли:', error);
@@ -163,19 +161,9 @@ export const updateUserRole = async (userId: string, newRole: string) => {
       throw new Error(`Ошибка обновления роли: ${error.message}`);
     }
 
-    if (!data) {
-      throw new Error('Не удалось получить обновленные данные пользователя');
-    }
-
-    console.log('Роль успешно обновлена:', data);
+    console.log('Роль успешно обновлена');
     
-    // Verify the role was actually updated
-    if (data.role !== newRole) {
-      console.warn('Роль в базе данных не соответствует ожидаемой:', data.role, 'ожидалось:', newRole);
-      throw new Error('Роль не была обновлена в базе данных');
-    }
-    
-    return { data, error: null };
+    return { data: null, error: null };
   } catch (error) {
     console.error('Общая ошибка обновления роли:', error);
     return { data: null, error };

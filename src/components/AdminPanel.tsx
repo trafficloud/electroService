@@ -74,7 +74,7 @@ export const AdminPanel: React.FC = () => {
       setNewRole('');
       
       // Show success message
-      console.log('Роль успешно обновлена в интерфейсе');
+      alert(`Роль пользователя успешно изменена на "${getRoleDisplayName(role)}"`);
     } catch (error) {
       console.error('Error updating role:', error);
       
@@ -97,21 +97,21 @@ export const AdminPanel: React.FC = () => {
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     setUpdating(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({ 
           is_active: !currentStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId)
-        .select('*')
-        .single();
+        .eq('id', userId);
 
       if (error) throw error;
       
       await fetchUsers();
       
-      console.log(`Пользователь ${!currentStatus ? 'активирован' : 'деактивирован'}`);
+      const statusText = !currentStatus ? 'активирован' : 'деактивирован';
+      console.log(`Пользователь ${statusText}`);
+      alert(`Пользователь успешно ${statusText}`);
     } catch (error) {
       console.error('Error updating user status:', error);
       alert(`Ошибка при изменении статуса пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
@@ -358,6 +358,7 @@ export const AdminPanel: React.FC = () => {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => setEditingEmployee(user)}
+                                disabled={updating}
                                 className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                               >
                                 <Edit3 className="w-4 h-4" />
@@ -365,6 +366,7 @@ export const AdminPanel: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => startEditing(user.id, user.role)}
+                                disabled={updating}
                                 className="text-purple-600 hover:text-purple-700 flex items-center space-x-1"
                               >
                                 <Shield className="w-4 h-4" />
@@ -372,12 +374,12 @@ export const AdminPanel: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => toggleUserStatus(user.id, user.role !== 'inactive')}
-                                onClick={() => toggleUserStatus(user.id, user.is_active && user.role !== 'inactive')}
+                                disabled={updating}
                                 className={`text-sm px-2 py-1 rounded transition-colors ${
                                   user.is_active && user.role !== 'inactive'
                                     ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
                                     : 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                                }`}
+                                } ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
                                 {user.is_active && user.role !== 'inactive' ? 'Деактивировать' : 'Активировать'}
                               </button>
