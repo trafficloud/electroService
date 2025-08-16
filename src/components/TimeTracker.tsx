@@ -60,8 +60,20 @@ export const TimeTracker: React.FC = () => {
     
     setLoading(true);
     try {
-      const position = await getCurrentLocation();
-      const location = formatLocation(position);
+      let location = null;
+      
+      try {
+        const position = await getCurrentLocation();
+        location = formatLocation(position);
+      } catch (locationError) {
+        console.warn('Geolocation failed:', locationError);
+        const proceed = confirm(
+          'Не удалось получить GPS координаты. Продолжить без записи местоположения?'
+        );
+        if (!proceed) {
+          return;
+        }
+      }
 
       const { data, error } = await supabase
         .from('work_sessions')
@@ -77,7 +89,7 @@ export const TimeTracker: React.FC = () => {
       setCurrentSession(data);
     } catch (error) {
       console.error('Error starting work:', error);
-      alert('Ошибка при начале работы. Проверьте доступ к геолокации.');
+      alert('Ошибка при начале работы.');
     } finally {
       setLoading(false);
     }
@@ -88,8 +100,21 @@ export const TimeTracker: React.FC = () => {
 
     setLoading(true);
     try {
-      const position = await getCurrentLocation();
-      const location = formatLocation(position);
+      let location = null;
+      
+      try {
+        const position = await getCurrentLocation();
+        location = formatLocation(position);
+      } catch (locationError) {
+        console.warn('Geolocation failed:', locationError);
+        const proceed = confirm(
+          'Не удалось получить GPS координаты. Продолжить без записи местоположения?'
+        );
+        if (!proceed) {
+          return;
+        }
+      }
+      
       const endTime = new Date();
       const startTime = new Date(currentSession.start_time);
       const totalHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
@@ -111,7 +136,7 @@ export const TimeTracker: React.FC = () => {
       fetchRecentSessions();
     } catch (error) {
       console.error('Error ending work:', error);
-      alert('Ошибка при завершении работы. Проверьте доступ к геолокации.');
+      alert('Ошибка при завершении работы.');
     } finally {
       setLoading(false);
     }
