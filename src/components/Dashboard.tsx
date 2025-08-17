@@ -278,7 +278,7 @@ const AdminQuickActions: React.FC<AdminQuickActionsProps> = ({ onNavigate }) => 
         .in('status', ['pending', 'in_progress']);
 
       setStats({
-        totalUsers: usersCount || 0,
+          systemStatus: 'Работает',
         rolesChanged: rolesCount || 0,
         activeTasks: tasksCount || 0,
         systemStatus: 'Работает'
