@@ -61,8 +61,8 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
         setSelectedCoords(newCoords);
         
         // Reverse geocode to get address
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18&addressdetails=1`);
+        try { // Add countrycodes=by for reverse geocoding
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18&addressdetails=1&countrycodes=by`);
           const data = await response.json();
           if (data && data.display_name) {
             setAddress(data.display_name);
@@ -107,7 +107,7 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
     try {
       // Используем Nominatim API для геокодирования
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&addressdetails=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&addressdetails=1&countrycodes=by` // Add countrycodes=by for manual search
       );
       const data = await response.json();
       
@@ -944,8 +944,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             selectedMaterials.map(m => ({
               task_id: taskData.id,
               material_id: m.material_id,
-              quantity_needed: m.quantity_needed,
-            }))
+          const response = await fetch( // Add countrycodes=by for search suggestions
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&countrycodes=by`
           );
 
         if (materialsError) throw materialsError;
