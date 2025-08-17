@@ -48,40 +48,89 @@ interface MapSelectorModalProps {
 
 const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, onClose }) => {
   const [selectedCoords, setSelectedCoords] = useState<[number, number]>(center);
-  // Helper component to handle map clicks
+  const [address, setAddress] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Helper component to handle map clicks and get map reference
   const MapEvents = () => {
-    useMapEvents({
-      click: (e) => {
-        setSelectedCoords([e.latlng.lat, e.latlng.lng]);
+    const map = useMapEvents({
+      click: async (e) => {
+        const newCoords: [number, number] = [e.latlng.lat, e.latlng.lng];
+        setSelectedCoords(newCoords);
+        
+        // Reverse geocode to get address
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18&addressdetails=1`);
+          const data = await response.json();
+          if (data && data.display_name) {
+            setAddress(data.display_name);
+          }
+        } catch (error) {
+          console.warn('Reverse geocoding failed:', error);
+        }
       },
     });
+    
+    // Store map reference for programmatic control
+    React.useEffect(() => {
+      if (map) {
+        mapRef.current = map;
+      }
+    }, [map]);
+    
     return null;
   };
-  const [address, setAddress] = useState('');
+  
+  const mapRef = React.useRef<L.Map | null>(null);
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedCoords([lat, lng]);
   };
 
+  const handleSuggestionClick = (suggestion: any) => {
+    const newCoords: [number, number] = [parseFloat(suggestion.lat), parseFloat(suggestion.lon)];
+    setSelectedCoords(newCoords);
+    setAddress(suggestion.display_name);
+    setShowSuggestions(false);
+    setSuggestions([]); // Clear suggestions
+    if (mapRef.current) {
+      mapRef.current.setView(newCoords, 15); // Zoom in a bit on selection
+    }
+  };
+
   const searchAddress = async () => {
     if (!address.trim()) return;
     
+    setIsSearching(true);
     try {
       // Используем Nominatim API для геокодирования
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&addressdetails=1`
       );
       const data = await response.json();
       
       if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
-        setSelectedCoords([lat, lng]);
+        setSuggestions(data);
+        setShowSuggestions(true);
+        
+        // Auto-select first result if only one
+        if (data.length === 1) {
+          const newCoords: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+          setSelectedCoords(newCoords);
+          setAddress(data[0].display_name); // Update address to full display name
+          if (mapRef.current) {
+            mapRef.current.setView(newCoords, 15);
+          }
+        }
       } else {
         alert('Адрес не найден. Попробуйте другой запрос.');
       }
     } catch (error) {
       alert('Ошибка поиска адреса. Проверьте подключение к интернету.');
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -100,29 +149,60 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
           </div>
           
           {/* Address Search */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Поиск по адресу..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
-            />
-            <button
-              onClick={searchAddress}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-            >
-              Найти
-            </button>
+          <div className="relative">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (e.target.value.length <= 2) {
+                    setShowSuggestions(false);
+                    setSuggestions([]);
+                  }
+                }}
+                placeholder="Поиск по адресу..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
+                onFocus={() => {
+                  if (suggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding suggestions to allow clicking
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+              />
+              <button
+                onClick={searchAddress}
+                disabled={isSearching}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isSearching ? 'Поиск...' : 'Найти'}
+              </button>
+            </div>
+            {showSuggestions && suggestions.length > 0 && !isSearching && (
+              <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                {suggestions.map((suggestion) => (
+                  <li
+                    key={suggestion.place_id}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                  >
+                    {suggestion.display_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
         
         {/* Interactive Map */}
-        <div className="h-96 w-full rounded-lg overflow-hidden">
+        <div className="h-[500px] w-full rounded-lg overflow-hidden border border-gray-200">
           <MapContainer
-            center={selectedCoords}
-            zoom={13}
+            center={selectedCoords} // Use selectedCoords for initial center
+            zoom={15}
             style={{ height: '100%', width: '100%' }}
             className="z-0"
           >
@@ -143,6 +223,14 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
               </Popup>
             </Marker>
           </MapContainer>
+        </div>
+        
+        {/* Selected coordinates display */}
+        <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <strong>Выбранные координаты:</strong> {selectedCoords[0].toFixed(6)}, {selectedCoords[1].toFixed(6)}
+          {address && (
+            <div className="mt-1"><strong>Адрес:</strong> {address}</div>
+          )}
         </div>
         
         {/* Actions */}
