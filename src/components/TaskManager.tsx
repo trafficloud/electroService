@@ -711,18 +711,6 @@ export const TaskManager: React.FC = () => {
                     )}
                   </>
                 )}
-                
-                {task.paused_at && (
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-gray-600 flex items-center space-x-1">
-                      <Pause className="w-4 h-4" />
-                      <span>Приостановлено:</span>
-                    </span>
-                    <span className="text-yellow-600 font-medium">
-                      {format(new Date(task.paused_at), 'dd.MM HH:mm', { locale: ru })}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Worker actions */}
@@ -944,8 +932,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
             selectedMaterials.map(m => ({
               task_id: taskData.id,
               material_id: m.material_id,
-          const response = await fetch( // Add countrycodes=by for search suggestions
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&countrycodes=by`
+              quantity_needed: m.quantity_needed,
+            }))
           );
 
         if (materialsError) throw materialsError;
