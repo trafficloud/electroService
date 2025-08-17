@@ -24,6 +24,128 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import React from 'react';
+
+// Map Selector Modal Component
+interface MapSelectorModalProps {
+  center: [number, number];
+  onSelect: (lat: number, lng: number) => void;
+  onClose: () => void;
+}
+
+const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, onClose }) => {
+  const [selectedCoords, setSelectedCoords] = useState<[number, number]>(center);
+  const [address, setAddress] = useState('');
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setSelectedCoords([lat, lng]);
+  };
+
+  const searchAddress = async () => {
+    if (!address.trim()) return;
+    
+    try {
+      // Используем Nominatim API для геокодирования
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        setSelectedCoords([lat, lng]);
+      } else {
+        alert('Адрес не найден. Попробуйте другой запрос.');
+      }
+    } catch (error) {
+      alert('Ошибка поиска адреса. Проверьте подключение к интернету.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Выберите местоположение</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Address Search */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Поиск по адресу..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
+            />
+            <button
+              onClick={searchAddress}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            >
+              Найти
+            </button>
+          </div>
+        </div>
+        
+        {/* Simple Map Placeholder */}
+        <div className="h-96 bg-gray-100 flex items-center justify-center relative">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🗺️</div>
+            <div className="text-lg font-medium text-gray-700 mb-2">Интерактивная карта</div>
+            <div className="text-sm text-gray-500 mb-4">
+              Координаты: {selectedCoords[0].toFixed(6)}, {selectedCoords[1].toFixed(6)}
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => handleMapClick(55.7558, 37.6173)}
+                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
+              >
+                📍 Красная площадь, Москва
+              </button>
+              <button
+                onClick={() => handleMapClick(59.9311, 30.3609)}
+                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
+              >
+                📍 Дворцовая площадь, СПб
+              </button>
+              <button
+                onClick={() => handleMapClick(56.8431, 60.6454)}
+                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
+              >
+                📍 Центр Екатеринбурга
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="p-4 border-t border-gray-200 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Отмена
+          </button>
+          <button
+            onClick={() => onSelect(selectedCoords[0], selectedCoords[1])}
+            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Выбрать это место
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const TaskManager: React.FC = () => {
   const { profile } = useAuth();
@@ -646,6 +768,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     quantity_needed: number;
   }>>([]);
   const [loading, setLoading] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([55.7558, 37.6173]); // Москва по умолчанию
 
   useEffect(() => {
     if (task?.materials) {
@@ -744,6 +868,34 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     setSelectedMaterials(updated);
   };
 
+  const getCurrentLocationForTask = async () => {
+    try {
+      const position = await getCurrentLocation();
+      const coords = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+      setFormData({ ...formData, target_location: coords });
+      alert('Координаты получены и добавлены в поле адреса');
+    } catch (error) {
+      alert('Не удалось получить местоположение. Проверьте разрешения браузера.');
+    }
+  };
+
+  const openMapSelector = () => {
+    // Если есть текущий адрес, попробуем его распарсить как координаты
+    if (formData.target_location) {
+      const coords = formData.target_location.split(',').map(c => parseFloat(c.trim()));
+      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        setMapCenter([coords[0], coords[1]]);
+      }
+    }
+    setShowMapModal(true);
+  };
+
+  const handleMapSelect = (lat: number, lng: number) => {
+    const coords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    setFormData({ ...formData, target_location: coords });
+    setShowMapModal(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -834,18 +986,37 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Адрес объекта
+                Адрес объекта *
               </label>
-              <input
-                type="text"
-                value={formData.target_location}
-                onChange={(e) => setFormData({ ...formData, target_location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Адрес или координаты (например: 55.7558, 37.6173)"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Укажите адрес или координаты в формате "широта, долгота"
-              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={formData.target_location}
+                  onChange={(e) => setFormData({ ...formData, target_location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Введите адрес (например: ул. Пушкина, 10, Москва)"
+                  required
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => getCurrentLocationForTask()}
+                    className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    📍 Моё местоположение
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openMapSelector()}
+                    className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 transition-colors"
+                  >
+                    🗺️ Выбрать на карте
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">
+                  💡 Можно ввести обычный адрес, использовать GPS или выбрать на карте
+                </p>
+              </div>
             </div>
 
             {/* Materials */}
@@ -915,6 +1086,15 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </form>
         </div>
       </div>
+      
+      {/* Map Selector Modal */}
+      {showMapModal && (
+        <MapSelectorModal
+          center={mapCenter}
+          onSelect={handleMapSelect}
+          onClose={() => setShowMapModal(false)}
+        />
+      )}
     </div>
   );
 };
