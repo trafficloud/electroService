@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut } from '../lib/supabase';
+import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut, hasValidCredentials, supabase } from '../lib/supabase';
 import { User, RoleChangeLog } from '../types';
 import { EmployeeForm } from './EmployeeForm';
 import { 
@@ -24,6 +24,16 @@ import { supabase } from '../lib/supabase';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+      </div>
+    );
+  }
+
   const [users, setUsers] = useState<User[]>([]);
   const [roleLogs, setRoleLogs] = useState<RoleChangeLog[]>([]);
   const [loading, setLoading] = useState(true);

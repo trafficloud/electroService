@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { supabase, getCurrentLocation, formatLocation, signOut, calculateDistance, parseCoordinates } from '../../lib/supabase';
+import { supabase, getCurrentLocation, formatLocation, signOut, calculateDistance, parseCoordinates, hasValidCredentials } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { WorkSession, Task } from '../../types';
 import { HeaderStatus } from './HeaderStatus';
@@ -24,6 +24,17 @@ interface HistoryEntry {
 export function WorkerSuperScreen() {
   const { profile } = useAuth();
   const { toast } = useToast();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="min-h-screen w-full bg-white text-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</h2>
+          <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+        </div>
+      </div>
+    );
+  }
   
   // State management
   const [currentSession, setCurrentSession] = useState<WorkSession | null>(null);

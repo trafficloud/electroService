@@ -1,14 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if we have valid Supabase credentials
-const hasValidCredentials = supabaseUrl !== 'https://placeholder.supabase.co' && 
-                           supabaseAnonKey !== 'placeholder-anon-key' &&
-                           supabaseUrl.includes('supabase.co');
+const hasValidCredentials = Boolean(
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl.includes('supabase.co') &&
+  supabaseUrl.startsWith('https://')
+);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = hasValidCredentials 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
 export { hasValidCredentials };
 // Auth helpers
 export const signUp = async (email: string, password: string, fullName: string) => {

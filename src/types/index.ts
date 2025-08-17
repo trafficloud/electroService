@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'worker' | 'manager' | 'director' | 'admin' | 'inactive';
+  role: 'worker' | 'manager' | 'director' | 'admin';
   hourly_rate?: number;
   is_active?: boolean;
   passport_series?: string;
@@ -18,7 +18,7 @@ export interface Task {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in_progress' | 'paused' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed';
   assigned_to: string;
   created_by: string;
   estimated_hours?: number;
@@ -27,13 +27,11 @@ export interface Task {
   target_location?: string;
   started_at?: string;
   completed_at?: string;
-  paused_at?: string;
-  total_pause_time?: number;
   created_at: string;
   updated_at: string;
   assignee?: User;
   creator?: User;
-  materials?: TaskMaterial[];
+  task_materials?: TaskMaterial[];
 }
 
 export interface TaskMaterial {

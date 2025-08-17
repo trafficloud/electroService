@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, getCurrentLocation, formatLocation } from '../lib/supabase';
+import { supabase, getCurrentLocation, formatLocation, hasValidCredentials } from '../lib/supabase';
 import { Task, User, Material } from '../types';
 import { MapButton } from './MapDisplay';
 import { 
@@ -255,6 +255,16 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
 
 export const TaskManager: React.FC = () => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+      </div>
+    );
+  }
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);

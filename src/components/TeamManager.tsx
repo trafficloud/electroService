@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { supabase, hasValidCredentials } from '../lib/supabase';
 import { User, WorkSession, Task } from '../types';
 import { MapDisplay } from './MapDisplay';
 import { 
@@ -33,6 +33,16 @@ interface TeamMember extends User {
 
 export const TeamManager: React.FC = () => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+      </div>
+    );
+  }
+
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [memberTasks, setMemberTasks] = useState<Task[]>([]);

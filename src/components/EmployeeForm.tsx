@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../lib/supabase';
+import { supabase, hasValidCredentials } from '../lib/supabase';
 import { User } from '../types';
 import { 
   User as UserIcon, 
@@ -27,6 +27,24 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
   onSuccess,
 }) => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Ошибка конфигурации</h2>
+          <p className="text-gray-600 mb-4">Система не настроена для работы с базой данных</p>
+          <button
+            onClick={onClose}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Закрыть
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
