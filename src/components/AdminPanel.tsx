@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { supabase } from '../lib/supabase';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
