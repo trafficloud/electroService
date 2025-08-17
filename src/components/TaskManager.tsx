@@ -25,6 +25,20 @@ import {
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+// Add these imports at the top of the file, along with other React imports
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+
+
 // Map Selector Modal Component
 interface MapSelectorModalProps {
   center: [number, number];
@@ -34,6 +48,15 @@ interface MapSelectorModalProps {
 
 const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, onClose }) => {
   const [selectedCoords, setSelectedCoords] = useState<[number, number]>(center);
+  // Helper component to handle map clicks
+  const MapEvents = () => {
+    useMapEvents({
+      click: (e) => {
+        setSelectedCoords([e.latlng.lat, e.latlng.lng]);
+      },
+    });
+    return null;
+  };
   const [address, setAddress] = useState('');
 
   const handleMapClick = (lat: number, lng: number) => {
@@ -95,35 +118,31 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
           </div>
         </div>
         
-        {/* Simple Map Placeholder */}
-        <div className="h-96 bg-gray-100 flex items-center justify-center relative">
-          <div className="text-center">
-            <div className="text-4xl mb-2">🗺️</div>
-            <div className="text-lg font-medium text-gray-700 mb-2">Интерактивная карта</div>
-            <div className="text-sm text-gray-500 mb-4">
-              Координаты: {selectedCoords[0].toFixed(6)}, {selectedCoords[1].toFixed(6)}
-            </div>
-            <div className="space-y-2">
-              <button
-                onClick={() => handleMapClick(55.7558, 37.6173)}
-                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
-              >
-                📍 Красная площадь, Москва
-              </button>
-              <button
-                onClick={() => handleMapClick(59.9311, 30.3609)}
-                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
-              >
-                📍 Дворцовая площадь, СПб
-              </button>
-              <button
-                onClick={() => handleMapClick(56.8431, 60.6454)}
-                className="block w-full px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded border text-left"
-              >
-                📍 Центр Екатеринбурга
-              </button>
-            </div>
-          </div>
+        {/* Interactive Map */}
+        <div className="h-96 w-full rounded-lg overflow-hidden">
+          <MapContainer
+            center={selectedCoords}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            className="z-0"
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <MapEvents />
+            <Marker position={selectedCoords}>
+              <Popup>
+                <div className="text-center">
+                  <strong>Выбранное место</strong>
+                  <br />
+                  <span className="text-sm text-gray-600">
+                    {selectedCoords[0].toFixed(6)}, {selectedCoords[1].toFixed(6)}
+                  </span>
+                </div>
+              </Popup>
+            </Marker>
+          </MapContainer>
         </div>
         
         {/* Actions */}
