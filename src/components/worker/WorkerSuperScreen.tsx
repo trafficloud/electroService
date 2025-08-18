@@ -10,6 +10,7 @@ import { EarningsToday } from './EarningsToday';
 import { HistoryMini } from './HistoryMini';
 import { ObjectsList } from './ObjectsList';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import { Truck, Pause, Camera, Phone } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
