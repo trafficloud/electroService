@@ -10,7 +10,7 @@ import { EarningsToday } from './EarningsToday';
 import { HistoryMini } from './HistoryMini';
 import { ObjectsList } from './ObjectsList';
 import { Button } from '../ui/button';
-import { Truck } from 'lucide-react';
+import { Truck, Pause, Camera, Phone } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
 type ShiftStatus = 'idle' | 'running' | 'pause';
@@ -712,18 +712,37 @@ export function WorkerSuperScreen() {
                           }
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-11"
-                          onClick={() => moveStart(task.id)}
-                          disabled={loading}
-                        >
-                          <Truck className="w-4 h-4 mr-1" />
-                          В путь
-                        </Button>
-                      </div>
+                    </div>
+                    
+                    {/* Кнопки действий для задач */}
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={pauseShift}
+                        disabled={loading}
+                      >
+                        <Pause className="w-4 h-4 mr-1" />
+                        Перерыв
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={photoReport}
+                        disabled={loading}
+                      >
+                        <Camera className="w-4 h-4 mr-1" />
+                        Фото-отчёт
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={callManager}
+                        disabled={loading}
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        Позвонить
+                      </Button>
                     </div>
                   </div>
                 ))
