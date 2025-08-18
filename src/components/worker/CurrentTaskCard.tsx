@@ -11,6 +11,9 @@ interface CurrentTaskCardProps {
   onStartTask: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
   onMoveStart: (taskId: string) => void;
+  onPause: () => void;
+  onPhotoReport: () => void;
+  onCallManager: () => void;
   loading: boolean;
 }
 
@@ -23,7 +26,7 @@ const getPriorityLabel = (priority: string) => {
   }
 };
 
-export function CurrentTaskCard({ task, taskElapsedTime, onStartTask, onCompleteTask, onMoveStart, loading }: CurrentTaskCardProps) {
+export function CurrentTaskCard({ task, taskElapsedTime, onStartTask, onCompleteTask, onMoveStart, onPause, onPhotoReport, onCallManager, loading }: CurrentTaskCardProps) {
   if (!task) {
     return (
       <Card className="p-4">
@@ -87,6 +90,42 @@ export function CurrentTaskCard({ task, taskElapsedTime, onStartTask, onComplete
           Завершить
         </Button>
       </div>
+
+      {/* Quick Actions */}
+      {task.status === 'in_progress' && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <Button
+            variant="outline"
+            size="default"
+            className="h-12"
+            onClick={onPause}
+            disabled={loading}
+          >
+            <Pause className="w-4 h-4 mr-1" />
+            Перерыв
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            className="h-12"
+            onClick={onPhotoReport}
+            disabled={loading}
+          >
+            <Camera className="w-4 h-4 mr-1" />
+            Фото-отчёт
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            className="h-12"
+            onClick={onCallManager}
+            disabled={loading}
+          >
+            <Phone className="w-4 h-4 mr-1" />
+            Позвонить
+          </Button>
+        </div>
+      )}
 
       <Button
         size="xl"

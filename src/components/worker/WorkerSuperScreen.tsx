@@ -686,6 +686,9 @@ export function WorkerSuperScreen() {
               onStartTask={startTask}
               onCompleteTask={completeTask}
               onMoveStart={moveStart}
+              onPause={pauseShift}
+              onPhotoReport={photoReport}
+              onCallManager={callManager}
               loading={loading}
             />
 
@@ -698,11 +701,11 @@ export function WorkerSuperScreen() {
                 </div>
               ) : (
                 tasks.map((task) => (
-                  <div key={task.id} className="border border-slate-200 rounded-xl p-4">
+                  <div key={task.id} className="border border-slate-200 rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="font-medium">{task.title}</div>
-                        <div className="text-sm text-slate-500">{task.description}</div>
+                        <div className="font-medium text-sm">{task.title}</div>
+                        <div className="text-xs text-slate-500 line-clamp-1">{task.description}</div>
                         <div className="text-xs text-slate-400 mt-1">
                           Статус: {
                             task.status === 'completed' ? 'Завершена' :
@@ -712,37 +715,16 @@ export function WorkerSuperScreen() {
                           }
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Кнопки действий для задач */}
-                    <div className="grid grid-cols-3 gap-2 mt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={pauseShift}
-                        disabled={loading}
+                      <Badge 
+                        variant={
+                          task.priority === 'high' ? 'warning' : 
+                          task.priority === 'medium' ? 'secondary' : 'success'
+                        }
+                        className="text-xs"
                       >
-                        <Pause className="w-4 h-4 mr-1" />
-                        Перерыв
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={photoReport}
-                        disabled={loading}
-                      >
-                        <Camera className="w-4 h-4 mr-1" />
-                        Фото-отчёт
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={callManager}
-                        disabled={loading}
-                      >
-                        <Phone className="w-4 h-4 mr-1" />
-                        Позвонить
-                      </Button>
+                        {task.priority === 'high' ? 'Высокий' : 
+                         task.priority === 'medium' ? 'Средний' : 'Низкий'}
+                      </Badge>
                     </div>
                   </div>
                 ))
