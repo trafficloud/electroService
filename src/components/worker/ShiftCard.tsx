@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { MapPin, Truck } from 'lucide-react';
 import { ShiftStatus } from '@/lib/workerState';
 
 interface ShiftCardProps {
