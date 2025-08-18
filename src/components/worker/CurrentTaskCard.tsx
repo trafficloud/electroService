@@ -66,9 +66,10 @@ export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart
           size="default"
           className="h-12"
           onClick={() => onStartTask(task.id)}
-          disabled={loading || task.status === 'in_progress' || task.status === 'completed'}
+          disabled={loading || task.status === 'completed'}
         >
-          {task.status === 'in_progress' ? 'В работе' : 'В работу'}
+          {task.status === 'in_progress' ? 'В работе' : 
+           task.status === 'paused' ? 'Продолжить' : 'В работу'}
         </Button>
         <Button
           variant="outline"

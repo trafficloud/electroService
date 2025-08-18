@@ -19,7 +19,7 @@ export function QuickActions({ status, onPause, onPhotoReport, onCallManager, lo
         size="default"
         className="h-12"
         onClick={onPause}
-        disabled={status !== 'running' || loading}
+        disabled={loading}
       >
         <Pause className="w-4 h-4 mr-1" />
         Перерыв

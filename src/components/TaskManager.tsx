@@ -555,6 +555,7 @@ export const TaskManager: React.FC = () => {
                   }`}>
                     {task.status === 'completed' ? 'Завершена' :
                      task.status === 'in_progress' ? 'В работе' :
+                     task.status === 'paused' ? 'На паузе' :
                      task.status === 'paused' ? 'На паузе' : 'Ожидает'}
                   </span>
                 </div>
