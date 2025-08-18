@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pause, Camera, Phone } from 'lucide-react';
+import { Pause, Camera, Phone, Truck } from 'lucide-react';
 import { Task } from '../../types';
 
 interface CurrentTaskCardProps {
