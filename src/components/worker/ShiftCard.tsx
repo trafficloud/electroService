@@ -48,6 +48,20 @@ export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocat
       >
         {mainCtaLabel(status, outside)}
       </Button>
+
+      {/* Move to object button */}
+      {currentTaskTargetLocation && (
+        <Button
+          size="default"
+          variant="outline"
+          className="w-full mt-2"
+          onClick={onMoveStart}
+          disabled={loading}
+        >
+          <Truck className="w-4 h-4 mr-2" />
+          В путь к объекту
+        </Button>
+      )}
     </Card>
   );
 }
