@@ -136,7 +136,7 @@ export function WorkerSuperScreen() {
       setTasks(data);
       // Set current task to the first in-progress or pending task
       const activeTask = data.find(task => 
-        task.status === 'in_progress' || task.status === 'pending' || task.status === 'paused'
+        task.status === 'in_progress' || task.status === 'pending'
       );
       setCurrentTask(activeTask || null);
     }
@@ -668,7 +668,8 @@ export function WorkerSuperScreen() {
                           Статус: {
                             task.status === 'completed' ? 'Завершена' :
                             task.status === 'in_progress' ? 'В работе' :
-                            task.status === 'paused' ? 'На паузе' : 'Ожидает'
+                            task.status === 'paused' ? 'На паузе' :
+                            'Ожидает'
                           }
                         </div>
                       </div>
