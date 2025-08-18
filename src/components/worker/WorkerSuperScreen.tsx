@@ -5,10 +5,10 @@ import { useToast } from '../../hooks/useToast';
 import { WorkSession, Task } from '../../types';
 import { HeaderStatus } from './HeaderStatus';
 import { ShiftCard } from './ShiftCard';
-import { QuickActions } from './QuickActions';
 import { CurrentTaskCard } from './CurrentTaskCard';
 import { EarningsToday } from './EarningsToday';
 import { HistoryMini } from './HistoryMini';
+import { ObjectsList } from './ObjectsList';
 import { Button } from '../ui/button';
 import { Truck } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
@@ -656,18 +656,13 @@ export function WorkerSuperScreen() {
               status={shiftStatus}
               outside={outside}
               currentTime={formatTime(currentSeconds)}
-              currentTaskTargetLocation={currentTask?.target_location}
-              currentTaskId={currentTask?.id}
               onMainAction={handleMainAction}
-              onMoveStart={moveStart}
               loading={loading}
             />
 
-            <QuickActions
-              status={shiftStatus}
-              onPause={pauseShift}
-              onPhotoReport={photoReport}
-              onCallManager={callManager}
+            <ObjectsList
+              tasks={tasks}
+              onMoveStart={moveStart}
               loading={loading}
             />
 

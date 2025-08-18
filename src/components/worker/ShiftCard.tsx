@@ -8,10 +8,7 @@ interface ShiftCardProps {
   status: ShiftStatus;
   outside: boolean;
   currentTime: string;
-  currentTaskTargetLocation?: string;
-  currentTaskId?: string;
   onMainAction: () => void;
-  onMoveStart: (taskId: string) => void;
   loading: boolean;
 }
 
@@ -21,7 +18,7 @@ function mainCtaLabel(status: ShiftStatus, outside: boolean): string {
   return 'Вернуться к работе';
 }
 
-export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocation, currentTaskId, onMainAction, onMoveStart, loading }: ShiftCardProps) {
+export function ShiftCard({ status, outside, currentTime, onMainAction, loading }: ShiftCardProps) {
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -33,7 +30,7 @@ export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocat
 
       <div className="mb-3 text-slate-600">
         <div className="flex items-center justify-between text-sm">
-          <span>Объект: {currentTaskTargetLocation || 'Не выбран'}</span>
+          <span>Статус смены</span>
           <span className={`flex items-center gap-1 ${outside ? 'text-rose-600' : 'text-emerald-600'}`}>
             <MapPin className="w-3 h-3" />
             {outside ? 'Вне геозоны (≈300 м)' : 'В геозоне'}
@@ -50,20 +47,6 @@ export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocat
       >
         {mainCtaLabel(status, outside)}
       </Button>
-
-      {/* Move to object button */}
-      {currentTaskTargetLocation && (
-        <Button
-          size="default"
-          variant="outline"
-          className="w-full mt-2"
-          onClick={() => currentTaskId && onMoveStart(currentTaskId)}
-          disabled={loading || !currentTaskId}
-        >
-          <Truck className="w-4 h-4 mr-2" />
-          В путь к объекту
-        </Button>
-      )}
     </Card>
   );
 }
