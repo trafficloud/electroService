@@ -11,8 +11,10 @@ interface ObjectsListProps {
 }
 
 export function ObjectsList({ tasks, onMoveStart, loading }: ObjectsListProps) {
-  // Фильтруем задачи, у которых есть target_location
-  const tasksWithLocation = tasks.filter(task => task.target_location);
+  // Фильтруем задачи, у которых есть target_location и которые не завершены
+  const tasksWithLocation = tasks.filter(task => 
+    task.target_location && task.status !== 'completed'
+  );
 
   if (tasksWithLocation.length === 0) {
     return (
@@ -22,7 +24,7 @@ export function ObjectsList({ tasks, onMoveStart, loading }: ObjectsListProps) {
         </div>
         <div className="text-center py-4 text-slate-500">
           <MapPin className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-          <p className="text-sm">Нет объектов с адресами</p>
+          <p className="text-sm">Нет незавершенных объектов</p>
         </div>
       </Card>
     );
@@ -32,7 +34,7 @@ export function ObjectsList({ tasks, onMoveStart, loading }: ObjectsListProps) {
     <Card className="p-4">
       <div className="mb-3">
         <h2 className="text-lg font-semibold">Объекты</h2>
-        <p className="text-sm text-slate-500">Объекты с адресами для посещения</p>
+        <p className="text-sm text-slate-500">Незавершенные объекты для посещения</p>
       </div>
       
       <div className="space-y-3">
