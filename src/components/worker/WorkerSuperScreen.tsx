@@ -271,14 +271,6 @@ export function WorkerSuperScreen() {
         variant: "success",
       });
 
-      // Auto-start first pending task if available
-      if (currentTask && currentTask.status === 'pending') {
-        setTimeout(() => {
-          if (confirm(`Начать работу над задачей "${currentTask.title}"?`)) {
-            startTask(currentTask.id);
-          }
-        }, 1000);
-      }
     } catch (error) {
       console.error('Error starting work:', error);
       toast({
