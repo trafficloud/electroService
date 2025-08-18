@@ -18,7 +18,7 @@ export interface Task {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in_progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'paused';
   assigned_to: string;
   created_by: string;
   estimated_hours?: number;
