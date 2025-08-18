@@ -338,21 +338,20 @@ export function WorkerSuperScreen() {
   const startTask = async (taskId: string) => {
     if (!profile) return;
     
-    // Ensure shift is active
+    // Автоматически начинаем смену, если она не активна
     if (!currentSession) {
-      const shouldStartShift = confirm(
-        'Для начала работы над задачей необходимо начать смену. Начать смену?'
-      );
-      if (shouldStartShift) {
-        await startWork();
-        // Wait a bit for the session to be created
-        setTimeout(() => startTask(taskId), 1000);
-      }
+      await startWork();
+      // Ждем немного для создания сессии
+      setTimeout(() => startTask(taskId), 1000);
       return;
     }
 
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
+
+    // Определяем, это новая задача или возобновление приостановленной
+    const isResuming = task.status === 'paused';
+    const newStatus = 'in_progress';
 
     // Check location if target_location is specified
     if (task.target_location) {
@@ -402,6 +401,10 @@ export function WorkerSuperScreen() {
     setLoading(true);
     try {
       let location = null;
+      let updateData: any = {
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      };
       
       try {
         const position = await getCurrentLocation();
@@ -410,25 +413,35 @@ export function WorkerSuperScreen() {
         console.warn('Geolocation failed:', locationError);
       }
 
+      if (isResuming) {
+        // Возобновляем приостановленную задачу
+        updateData.paused_at = null;
+        
+        toast({
+          title: "Задача возобновлена",
+          description: "Продолжаем работу над задачей!",
+          variant: "success",
+        });
+      } else {
+        // Начинаем новую задачу
+        updateData.started_at = new Date().toISOString();
+        updateData.start_location = location;
+        
+        toast({
+          title: "Задача в работе",
+          description: "Задача взята в работу!",
+          variant: "success",
+        });
+      }
+
       const { error } = await supabase
         .from('tasks')
-        .update({
-          status: 'in_progress',
-          started_at: new Date().toISOString(),
-          start_location: location,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', taskId);
 
       if (error) throw error;
       
       await fetchTasks();
-      
-      toast({
-        title: "Задача в работе",
-        description: "Задача взята в работу!",
-        variant: "success",
-      });
     } catch (error) {
       console.error('Error starting task:', error);
       toast({

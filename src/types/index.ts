@@ -27,6 +27,7 @@ export interface Task {
   target_location?: string;
   started_at?: string;
   completed_at?: string;
+  paused_at?: string;
   created_at: string;
   updated_at: string;
   assignee?: User;
