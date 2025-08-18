@@ -9,7 +9,9 @@ interface ShiftCardProps {
   outside: boolean;
   currentTime: string;
   currentTaskTargetLocation?: string;
+  currentTaskId?: string;
   onMainAction: () => void;
+  onMoveStart: (taskId: string) => void;
   loading: boolean;
 }
 
@@ -19,7 +21,7 @@ function mainCtaLabel(status: ShiftStatus, outside: boolean): string {
   return 'Вернуться к работе';
 }
 
-export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocation, onMainAction, loading }: ShiftCardProps) {
+export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocation, currentTaskId, onMainAction, onMoveStart, loading }: ShiftCardProps) {
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -55,8 +57,8 @@ export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocat
           size="default"
           variant="outline"
           className="w-full mt-2"
-          onClick={onMoveStart}
-          disabled={loading}
+          onClick={() => currentTaskId && onMoveStart(currentTaskId)}
+          disabled={loading || !currentTaskId}
         >
           <Truck className="w-4 h-4 mr-2" />
           В путь к объекту

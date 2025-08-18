@@ -665,7 +665,9 @@ export function WorkerSuperScreen() {
               outside={outside}
               currentTime={formatTime(currentSeconds)}
               currentTaskTargetLocation={currentTask?.target_location}
+              currentTaskId={currentTask?.id}
               onMainAction={handleMainAction}
+              onMoveStart={moveStart}
               loading={loading}
             />
 
