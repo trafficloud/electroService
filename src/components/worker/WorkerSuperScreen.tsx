@@ -348,7 +348,38 @@ export function WorkerSuperScreen() {
   };
 
   const pauseShift = async () => {
-    await pauseTask();
+    if (!currentTask || !profile) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          status: 'paused',
+          paused_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', currentTask.id);
+
+      if (error) throw error;
+      
+      await fetchTasks();
+      
+      toast({
+        title: "Задача приостановлена",
+        description: "Задача поставлена на паузу",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error('Error pausing task:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось приостановить задачу",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startTask = async (taskId: string) => {
