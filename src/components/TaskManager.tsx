@@ -342,6 +342,7 @@ export const TaskManager: React.FC = () => {
     setUpdatingTask(taskId);
     
     try {
+      const task = tasks.find(t => t.id === taskId);
       let updateData: any = { 
         status, 
         updated_at: new Date().toISOString() 
@@ -355,16 +356,36 @@ export const TaskManager: React.FC = () => {
           
           if (status === 'in_progress') {
             // Если задача была на паузе, не перезаписываем start_location
-            const currentTask = tasks.find(t => t.id === taskId);
-            if (!currentTask?.start_location) {
+            if (!task?.start_location) {
               updateData.start_location = location;
               updateData.started_at = new Date().toISOString();
+            } else if (task?.paused_at) {
+              // Возобновляем приостановленную задачу
+              let totalPauseDuration = task.total_pause_duration || 0;
+              const pauseStart = new Date(task.paused_at);
+              const now = new Date();
+              const currentPauseDuration = Math.floor((now.getTime() - pauseStart.getTime()) / 1000);
+              totalPauseDuration += currentPauseDuration;
+              
+              updateData.total_pause_duration = totalPauseDuration;
             }
             // Сбрасываем время паузы при возобновлении
             updateData.paused_at = null;
           } else if (status === 'completed') {
             updateData.end_location = location;
             updateData.completed_at = new Date().toISOString();
+            
+            // Если задача была на паузе, добавляем последнюю длительность паузы
+            if (task?.paused_at) {
+              let totalPauseDuration = task.total_pause_duration || 0;
+              const pauseStart = new Date(task.paused_at);
+              const now = new Date();
+              const currentPauseDuration = Math.floor((now.getTime() - pauseStart.getTime()) / 1000);
+              totalPauseDuration += currentPauseDuration;
+              
+              updateData.total_pause_duration = totalPauseDuration;
+              updateData.paused_at = null;
+            }
           }
         } catch (locationError) {
           console.warn('Не удалось получить геолокацию:', locationError);

@@ -8,6 +8,7 @@ interface ShiftCardProps {
   status: ShiftStatus;
   outside: boolean;
   currentTime: string;
+  currentTaskTargetLocation?: string;
   onMainAction: () => void;
   loading: boolean;
 }
@@ -18,7 +19,7 @@ function mainCtaLabel(status: ShiftStatus, outside: boolean): string {
   return 'Вернуться к работе';
 }
 
-export function ShiftCard({ status, outside, currentTime, onMainAction, loading }: ShiftCardProps) {
+export function ShiftCard({ status, outside, currentTime, currentTaskTargetLocation, onMainAction, loading }: ShiftCardProps) {
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -30,7 +31,7 @@ export function ShiftCard({ status, outside, currentTime, onMainAction, loading 
 
       <div className="mb-3 text-slate-600">
         <div className="flex items-center justify-between text-sm">
-          <span>Объект: ул. Пушкина, 10</span>
+          <span>Объект: {currentTaskTargetLocation || 'Не выбран'}</span>
           <span className={`flex items-center gap-1 ${outside ? 'text-rose-600' : 'text-emerald-600'}`}>
             <MapPin className="w-3 h-3" />
             {outside ? 'Вне геозоны (≈300 м)' : 'В геозоне'}

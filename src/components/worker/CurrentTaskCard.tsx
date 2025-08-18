@@ -7,6 +7,7 @@ import { Task } from '../../types';
 
 interface CurrentTaskCardProps {
   task: Task | null;
+  taskElapsedTime: string;
   onStartTask: (taskId: string) => void;
   onCompleteTask: (taskId: string) => void;
   onMoveStart: (taskId: string) => void;
@@ -22,7 +23,7 @@ const getPriorityLabel = (priority: string) => {
   }
 };
 
-export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart, loading }: CurrentTaskCardProps) {
+export function CurrentTaskCard({ task, taskElapsedTime, onStartTask, onCompleteTask, onMoveStart, loading }: CurrentTaskCardProps) {
   if (!task) {
     return (
       <Card className="p-4">
@@ -56,7 +57,12 @@ export function CurrentTaskCard({ task, onStartTask, onCompleteTask, onMoveStart
       )}
       {task.estimated_hours && (
         <div className="text-sm text-slate-500 mb-3">
-          Оценка времени: {task.estimated_hours} ч
+          Оценка: {task.estimated_hours} ч • Время в работе: {taskElapsedTime}
+        </div>
+      )}
+      {!task.estimated_hours && task.status === 'in_progress' && (
+        <div className="text-sm text-slate-500 mb-3">
+          Время в работе: {taskElapsedTime}
         </div>
       )}
 

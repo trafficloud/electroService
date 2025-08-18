@@ -46,10 +46,11 @@ export function WorkerSuperScreen() {
   const [todayHours, setTodayHours] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [tab, setTab] = useState<'time' | 'tasks'>('time');
+  const [tab, setTab] = useState<'time' | 'tasks'>('tasks');
   const [geoVerified, setGeoVerified] = useState(true);
   const [outside, setOutside] = useState(false);
   const [currentSeconds, setCurrentSeconds] = useState(0);
+  const [currentTaskSeconds, setCurrentTaskSeconds] = useState(0);
 
   // Update current time every second
   useEffect(() => {
@@ -69,6 +70,19 @@ export function WorkerSuperScreen() {
       return () => clearInterval(timer);
     }
   }, [currentSession]);
+
+  // Update task timer
+  useEffect(() => {
+    if (currentTask && currentTask.status === 'in_progress' && currentTask.started_at) {
+      const timer = setInterval(() => {
+        const taskSeconds = calculateTaskElapsedTime(currentTask);
+        setCurrentTaskSeconds(taskSeconds);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setCurrentTaskSeconds(0);
+    }
+  }, [currentTask]);
 
   // Initialize data on component mount
   useEffect(() => {
@@ -184,6 +198,19 @@ export function WorkerSuperScreen() {
       }));
       setHistory(historyEntries);
     }
+  };
+
+  const calculateTaskElapsedTime = (task: Task): number => {
+    if (!task.started_at || task.status !== 'in_progress') return 0;
+    
+    const startTime = new Date(task.started_at);
+    const now = new Date();
+    const totalElapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+    
+    // Subtract total pause duration
+    const pauseDuration = task.total_pause_duration || 0;
+    
+    return Math.max(0, totalElapsed - pauseDuration);
   };
 
   const getShiftStatus = (): ShiftStatus => {
@@ -328,11 +355,7 @@ export function WorkerSuperScreen() {
   };
 
   const pauseShift = async () => {
-    toast({
-      title: "Перерыв",
-      description: "Вы на перерыве. Не забудьте вернуться в работу.",
-      variant: "default",
-    });
+    await pauseTask();
   };
 
   const startTask = async (taskId: string) => {
@@ -415,6 +438,16 @@ export function WorkerSuperScreen() {
 
       if (isResuming) {
         // Возобновляем приостановленную задачу
+        // Рассчитываем длительность текущей паузы
+        let totalPauseDuration = task.total_pause_duration || 0;
+        if (task.paused_at) {
+          const pauseStart = new Date(task.paused_at);
+          const now = new Date();
+          const currentPauseDuration = Math.floor((now.getTime() - pauseStart.getTime()) / 1000);
+          totalPauseDuration += currentPauseDuration;
+        }
+        
+        updateData.total_pause_duration = totalPauseDuration;
         updateData.paused_at = null;
         
         toast({
@@ -457,6 +490,7 @@ export function WorkerSuperScreen() {
   const completeTask = async (taskId: string) => {
     setLoading(true);
     try {
+      const task = tasks.find(t => t.id === taskId);
       let location = null;
       
       try {
@@ -466,14 +500,28 @@ export function WorkerSuperScreen() {
         console.warn('Geolocation failed:', locationError);
       }
 
+      let updateData: any = {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        end_location: location,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Если задача была на паузе, добавляем последнюю длительность паузы
+      if (task && task.paused_at) {
+        let totalPauseDuration = task.total_pause_duration || 0;
+        const pauseStart = new Date(task.paused_at);
+        const now = new Date();
+        const currentPauseDuration = Math.floor((now.getTime() - pauseStart.getTime()) / 1000);
+        totalPauseDuration += currentPauseDuration;
+        
+        updateData.total_pause_duration = totalPauseDuration;
+        updateData.paused_at = null;
+      }
+
       const { error } = await supabase
         .from('tasks')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          end_location: location,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', taskId);
 
       if (error) throw error;
@@ -616,6 +664,7 @@ export function WorkerSuperScreen() {
               status={shiftStatus}
               outside={outside}
               currentTime={formatTime(currentSeconds)}
+              currentTaskTargetLocation={currentTask?.target_location}
               onMainAction={handleMainAction}
               loading={loading}
             />
@@ -644,6 +693,7 @@ export function WorkerSuperScreen() {
           <>
             <CurrentTaskCard
               task={currentTask}
+              taskElapsedTime={formatTime(currentTaskSeconds)}
               onStartTask={startTask}
               onCompleteTask={completeTask}
               onMoveStart={moveStart}
