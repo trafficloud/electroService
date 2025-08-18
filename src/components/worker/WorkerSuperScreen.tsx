@@ -686,7 +686,6 @@ export function WorkerSuperScreen() {
               taskElapsedTime={formatTime(currentTaskSeconds)}
               onStartTask={startTask}
               onCompleteTask={completeTask}
-              onMoveStart={moveStart}
               onPause={pauseShift}
               onPhotoReport={photoReport}
               onCallManager={callManager}
