@@ -70,19 +70,20 @@ export const Auth: React.FC = () => {
         const { error } = await signIn(data.email, data.password);
         if (error) throw error;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string };
       let errorMessage = 'Произошла ошибка';
-      
-      if (err.message?.includes('email_address_invalid')) {
+
+      if (error.message?.includes('email_address_invalid')) {
         errorMessage = 'Недопустимый email-адрес. Используйте реальный email (например, Gmail, Yandex, Mail.ru)';
-      } else if (err.message?.includes('email_not_confirmed')) {
+      } else if (error.message?.includes('email_not_confirmed')) {
         errorMessage = 'Email не подтвержден. Проверьте почту и перейдите по ссылке подтверждения';
-      } else if (err.message?.includes('invalid_credentials')) {
+      } else if (error.message?.includes('invalid_credentials')) {
         errorMessage = 'Неверный email или пароль';
-      } else if (err.message?.includes('Database error')) {
+      } else if (error.message?.includes('Database error')) {
         errorMessage = 'Ошибка базы данных. Обратитесь к администратору';
       } else {
-        errorMessage = err.message || 'Произошла ошибка';
+        errorMessage = error.message || 'Произошла ошибка';
       }
       
       setError(errorMessage);

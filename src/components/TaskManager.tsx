@@ -30,7 +30,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaf
 import L from 'leaflet';
 
 // Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: () => string })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -46,10 +46,28 @@ interface MapSelectorModalProps {
   onClose: () => void;
 }
 
+interface AddressSuggestion {
+  place_id: string;
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+interface TaskUpdateData {
+  status: Task['status'];
+  updated_at: string;
+  start_location?: string | null;
+  end_location?: string | null;
+  started_at?: string;
+  completed_at?: string;
+  paused_at?: string | null;
+  total_pause_duration?: number;
+}
+
 const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, onClose }) => {
   const [selectedCoords, setSelectedCoords] = useState<[number, number]>(center);
   const [address, setAddress] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   
@@ -89,7 +107,7 @@ const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ center, onSelect, o
     setSelectedCoords([lat, lng]);
   };
 
-  const handleSuggestionClick = (suggestion: any) => {
+  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
     const newCoords: [number, number] = [parseFloat(suggestion.lat), parseFloat(suggestion.lon)];
     setSelectedCoords(newCoords);
     setAddress(suggestion.display_name);
@@ -272,7 +290,7 @@ export const TaskManager: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | Task['status']>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingTask, setUpdatingTask] = useState<string | null>(null);
 
@@ -343,9 +361,9 @@ export const TaskManager: React.FC = () => {
     
     try {
       const task = tasks.find(t => t.id === taskId);
-      let updateData: any = { 
-        status, 
-        updated_at: new Date().toISOString() 
+      let updateData: TaskUpdateData = {
+        status,
+        updated_at: new Date().toISOString()
       };
 
       // Получаем геолокацию для начала или завершения задачи
@@ -498,7 +516,9 @@ export const TaskManager: React.FC = () => {
             <Filter className="w-4 h-4 text-gray-500" />
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setFilter(e.target.value as 'all' | Task['status'])
+              }
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Все задачи</option>
@@ -956,7 +976,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
         taskData = data;
       }
 
-      // Add materials if any
+      // Add materials if present
       if (selectedMaterials.length > 0) {
         const { error: materialsError } = await supabase
           .from('task_materials')
@@ -988,7 +1008,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     setSelectedMaterials(selectedMaterials.filter((_, i) => i !== index));
   };
 
-  const updateMaterial = (index: number, field: string, value: any) => {
+  const updateMaterial = <K extends 'material_id' | 'quantity_needed'>(
+    index: number,
+    field: K,
+    value: typeof selectedMaterials[number][K]
+  ) => {
     const updated = [...selectedMaterials];
     updated[index] = { ...updated[index], [field]: value };
     setSelectedMaterials(updated);

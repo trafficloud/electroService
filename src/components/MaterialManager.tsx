@@ -146,14 +146,14 @@ export const MaterialManager: React.FC = () => {
   const getTotalStock = (material: Material) => {
     if (!material.inventory) return 0;
     return material.inventory
-      .filter((inv: any) => inv.location_type === 'warehouse')
+      .filter((inv: MaterialInventory) => inv.location_type === 'warehouse')
       .reduce((sum, inv) => sum + inv.quantity, 0);
   };
 
   const getOnSiteStock = (material: Material) => {
     if (!material.inventory) return 0;
     return material.inventory
-      .filter((inv: any) => inv.location_type === 'on_site')
+      .filter((inv: MaterialInventory) => inv.location_type === 'on_site')
       .reduce((sum, inv) => sum + inv.quantity, 0);
   };
 
@@ -805,7 +805,7 @@ const SuppliersTab: React.FC<SuppliersTabProps> = ({
 // Create/Edit Modal Component
 interface CreateEditModalProps {
   type: 'materials' | 'categories' | 'warehouses' | 'suppliers';
-  item?: any;
+  item?: EditingItem;
   categories: MaterialCategory[];
   warehouses: Warehouse[];
   onClose: () => void;
@@ -820,7 +820,7 @@ const CreateEditModal: React.FC<CreateEditModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<EditingItem>({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
