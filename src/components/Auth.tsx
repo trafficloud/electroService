@@ -18,33 +18,31 @@ const authSchema = z.object({
 
 type AuthFormData = z.infer<typeof authSchema>;
 
-export const Auth: React.FC = () => {
-  // Check if Supabase is configured
-  if (!hasValidCredentials) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="flex items-center justify-center w-16 h-16 bg-red-600 rounded-2xl mx-auto mb-4">
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Конфигурация не найдена</h1>
-            <p className="text-gray-600 mb-4">
-              Для работы системы необходимо настроить подключение к Supabase.
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
-              <p className="font-medium mb-2">Необходимо:</p>
-              <ol className="list-decimal list-inside space-y-1 text-gray-600">
-                <li>Создать проект в Supabase</li>
-                <li>Скопировать URL и Anon Key</li>
-                <li>Настроить переменные окружения</li>
-              </ol>
-            </div>
-          </div>
+const ConfigWarning: React.FC = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="max-w-md w-full">
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div className="flex items-center justify-center w-16 h-16 bg-red-600 rounded-2xl mx-auto mb-4">
+          <Zap className="w-8 h-8 text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Конфигурация не найдена</h1>
+        <p className="text-gray-600 mb-4">
+          Для работы системы необходимо настроить подключение к Supabase.
+        </p>
+        <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
+          <p className="font-medium mb-2">Необходимо:</p>
+          <ol className="list-decimal list-inside space-y-1 text-gray-600">
+            <li>Создать проект в Supabase</li>
+            <li>Скопировать URL и Anon Key</li>
+            <li>Настроить переменные окружения</li>
+          </ol>
         </div>
       </div>
-    );
-  }
+    </div>
+  </div>
+);
+
+export const Auth: React.FC = () => {
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -99,7 +97,7 @@ export const Auth: React.FC = () => {
     reset();
   };
 
-  return (
+  const AuthForm: React.FC = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -197,14 +195,15 @@ export const Auth: React.FC = () => {
               onClick={toggleMode}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              {isSignUp 
-                ? 'Уже есть аккаунт? Войти' 
-                : 'Нет аккаунта? Зарегистрироваться'
-              }
+              {isSignUp
+                ? 'Уже есть аккаунт? Войти'
+                : 'Нет аккаунта? Зарегистрироваться'}
             </button>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return hasValidCredentials ? <AuthForm /> : <ConfigWarning />;
 };
