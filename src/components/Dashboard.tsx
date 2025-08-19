@@ -288,7 +288,6 @@ const AdminQuickActions: React.FC<AdminQuickActionsProps> = ({ onNavigate }) => 
 
       setStats({
         totalUsers: usersCount || 0,
-          systemStatus: 'Работает',
         rolesChanged: rolesCount || 0,
         activeTasks: tasksCount || 0,
         systemStatus: 'Работает'
