@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase, getCurrentLocation, formatLocation } from '../lib/supabase';
 import { Task, User, Material } from '../types';
 import { MapButton } from './MapDisplay';
-import { 
+import {
   Plus, 
   CheckSquare, 
   Clock, 
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useNotification } from './ui/Notification';
 
 export const TaskManager: React.FC = () => {
   const { profile } = useAuth();
@@ -37,6 +38,7 @@ export const TaskManager: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingTask, setUpdatingTask] = useState<string | null>(null);
+  const { notify, confirm } = useNotification();
 
   useEffect(() => {
     fetchTasks();
@@ -130,8 +132,9 @@ export const TaskManager: React.FC = () => {
           }
         } catch (locationError) {
           console.warn('Не удалось получить геолокацию:', locationError);
-          // Продолжаем без геолокации, но предупреждаем пользователя
-          if (!confirm('Не удалось определить местоположение. Продолжить без GPS-координат?')) {
+          const proceed = await confirm('Не удалось определить местоположение. Продолжить без GPS-координат?');
+          if (!proceed) {
+            setUpdatingTask(null);
             return;
           }
         }
@@ -150,7 +153,7 @@ export const TaskManager: React.FC = () => {
       await fetchTasks();
     } catch (error) {
       console.error('Ошибка обновления задачи:', error);
-      alert('Ошибка при обновлении статуса задачи');
+      notify('Ошибка при обновлении статуса задачи', 'error');
     } finally {
       setUpdatingTask(null);
     }
@@ -166,7 +169,7 @@ export const TaskManager: React.FC = () => {
       fetchTasks();
       setDeletingTask(null);
     } else {
-      alert('Ошибка при удалении задачи');
+      notify('Ошибка при удалении задачи', 'error');
     }
   };
 
@@ -632,6 +635,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   onSuccess,
 }) => {
   const { profile } = useAuth();
+  const { notify } = useNotification();
   const [formData, setFormData] = useState({
     title: task?.title || '',
     description: task?.description || '',
@@ -721,7 +725,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
       onSuccess();
     } catch (error) {
       console.error('Error creating task:', error);
-      alert(task ? 'Ошибка при обновлении задачи' : 'Ошибка при создании задачи');
+      notify(task ? 'Ошибка при обновлении задачи' : 'Ошибка при создании задачи', 'error');
     } finally {
       setLoading(false);
     }
