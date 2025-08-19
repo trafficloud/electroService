@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, hasValidCredentials } from '../lib/supabase';
-import { Material, MaterialCategory, Warehouse, Supplier, MaterialInventory } from '../types';
+import {
+  Material,
+  MaterialCategory,
+  Warehouse,
+  Supplier,
+  MaterialInventory,
+} from '../types';
 import { 
   Plus, 
   Package, 
@@ -25,34 +31,37 @@ import {
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+interface EditingItem
+  extends Partial<Material>,
+    Partial<MaterialCategory>,
+    Partial<Warehouse>,
+    Partial<Supplier> {}
+
 export const MaterialManager: React.FC = () => {
   const { profile } = useAuth();
-
-  if (!hasValidCredentials || !supabase) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
-        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
-      </div>
-    );
-  }
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'materials' | 'categories' | 'warehouses' | 'suppliers'>('materials');
+  const [activeTab, setActiveTab] = useState<
+    'materials' | 'categories' | 'warehouses' | 'suppliers'
+  >('materials');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  const isConfigured = hasValidCredentials && !!supabase;
+
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isConfigured) {
+      fetchData();
+    }
+  }, [isConfigured]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -156,22 +165,23 @@ export const MaterialManager: React.FC = () => {
   const filteredMaterials = materials.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || material.category_id === categoryFilter;
-    const matchesWarehouse = warehouseFilter === 'all' || 
-      (material.inventory && material.inventory.some(inv => 
+    const matchesWarehouse = warehouseFilter === 'all' ||
+      (material.inventory && material.inventory.some(inv =>
         inv.location_type === 'warehouse' && inv.warehouse_id === warehouseFilter
       ));
     return matchesSearch && matchesCategory && matchesWarehouse;
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  return (
+  return !isConfigured ? (
+    <div className="text-center py-12">
+      <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+      <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+    </div>
+  ) : loading ? (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  ) : (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -505,7 +515,7 @@ export const MaterialManager: React.FC = () => {
 interface CategoriesTabProps {
   categories: MaterialCategory[];
   onRefresh: () => void;
-  onEdit: (item: any) => void;
+  onEdit: (item: EditingItem) => void;
   onDelete: (id: string) => void;
   deleteConfirm: string | null;
   setDeleteConfirm: (id: string | null) => void;
@@ -588,7 +598,7 @@ const CategoriesTab: React.FC<CategoriesTabProps> = ({
 interface WarehousesTabProps {
   warehouses: Warehouse[];
   onRefresh: () => void;
-  onEdit: (item: any) => void;
+  onEdit: (item: EditingItem) => void;
   onDelete: (id: string) => void;
   deleteConfirm: string | null;
   setDeleteConfirm: (id: string | null) => void;
@@ -691,7 +701,7 @@ const WarehousesTab: React.FC<WarehousesTabProps> = ({
 interface SuppliersTabProps {
   suppliers: Supplier[];
   onRefresh: () => void;
-  onEdit: (item: any) => void;
+  onEdit: (item: EditingItem) => void;
   onDelete: (id: string) => void;
   deleteConfirm: string | null;
   setDeleteConfirm: (id: string | null) => void;
