@@ -3,35 +3,32 @@ import { useAuth } from '../hooks/useAuth';
 import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut, hasValidCredentials, supabase } from '../lib/supabase';
 import { User, RoleChangeLog } from '../types';
 import { EmployeeForm } from './EmployeeForm';
-import { 
-  Users, 
-  Shield, 
-  Edit3, 
-  Check, 
-  X, 
+import {
+  Users,
+  Shield,
+  Edit3,
+  Check,
+  X,
   AlertCircle,
   Clock,
   Search,
   Filter,
   ChevronDown,
   History,
-  Plus,
   UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
+const ConfigError: React.FC = () => (
+  <div className="text-center py-12">
+    <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+    <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+  </div>
+);
+
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
-
-  if (!hasValidCredentials || !supabase) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
-        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
-      </div>
-    );
-  }
 
   const [users, setUsers] = useState<User[]>([]);
   const [roleLogs, setRoleLogs] = useState<RoleChangeLog[]>([]);
@@ -46,11 +43,16 @@ export const AdminPanel: React.FC = () => {
   const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
 
   useEffect(() => {
+    if (!hasValidCredentials || !supabase) return;
     if (profile?.role === 'admin') {
       fetchUsers();
       fetchRoleLogs();
     }
   }, [profile]);
+
+  if (!hasValidCredentials || !supabase) {
+    return <ConfigError />;
+  }
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -71,7 +73,7 @@ export const AdminPanel: React.FC = () => {
   const handleRoleUpdate = async (userId: string, role: string) => {
     setUpdating(true);
     try {
-      const { data, error } = await updateUserRole(userId, role);
+      const { error } = await updateUserRole(userId, role);
       if (error) throw error;
       
       // Force refresh all data after successful update
