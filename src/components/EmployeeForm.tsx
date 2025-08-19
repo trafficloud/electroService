@@ -80,7 +80,16 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
     setLoading(true);
     try {
-      const updateData: any = {
+      interface UpdateData extends Partial<User> {
+        hourly_rate: number | null;
+        passport_series: string | null;
+        passport_number: string | null;
+        passport_issue_date: string | null;
+        passport_issued_by: string | null;
+        updated_at: string;
+      }
+
+      const updateData: UpdateData = {
         full_name: formData.full_name.trim(),
         email: formData.email.trim(),
         role: formData.role,

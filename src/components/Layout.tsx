@@ -1,21 +1,23 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signOut } from '../lib/supabase';
-import { 
-  Zap, 
-  LogOut, 
-  Clock, 
-  CheckSquare, 
-  Package, 
-  BarChart3, 
+import {
+  Zap,
+  LogOut,
+  Clock,
+  CheckSquare,
+  Package,
+  BarChart3,
   Users,
   Settings
 } from 'lucide-react';
 
+type View = 'time' | 'tasks' | 'materials' | 'team' | 'analytics' | 'admin';
+
 interface LayoutProps {
   children: React.ReactNode;
-  onNavigate?: (view: string) => void;
-  currentView?: string;
+  onNavigate?: (view: View) => void;
+  currentView?: View;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, onNavigate, currentView }) => {
@@ -87,7 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onNavigate, currentVie
             {getNavItems().map((item) => (
               <button
                 key={item.view}
-                onClick={() => onNavigate?.(item.view as any)}
+                onClick={() => onNavigate?.(item.view)}
                 className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap min-w-max ${
                   currentView === item.view
                     ? 'text-blue-600 bg-blue-50'

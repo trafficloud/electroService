@@ -22,6 +22,17 @@ interface HistoryEntry {
   earnings: number;
 }
 
+interface TaskUpdate {
+  status: Task['status'];
+  updated_at: string;
+  start_location?: string | null;
+  started_at?: string;
+  total_pause_duration?: number;
+  paused_at?: string | null;
+  completed_at?: string;
+  end_location?: string | null;
+}
+
 export function WorkerSuperScreen() {
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -47,7 +58,12 @@ export function WorkerSuperScreen() {
   const [todayHours, setTodayHours] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [tab, setTab] = useState<'time' | 'tasks'>('tasks');
+  const tabOptions = [
+    { id: 'time', label: 'Время' },
+    { id: 'tasks', label: 'Задачи' },
+  ] as const;
+  type TabId = typeof tabOptions[number]['id'];
+  const [tab, setTab] = useState<TabId>('tasks');
   const [geoVerified, setGeoVerified] = useState(true);
   const [outside, setOutside] = useState(false);
   const [currentSeconds, setCurrentSeconds] = useState(0);
@@ -447,8 +463,8 @@ export function WorkerSuperScreen() {
     }
     setLoading(true);
     try {
-      let location = null;
-      let updateData: any = {
+      let location: string | null = null;
+      let updateData: TaskUpdate = {
         status: newStatus,
         updated_at: new Date().toISOString(),
       };
@@ -524,7 +540,7 @@ export function WorkerSuperScreen() {
         console.warn('Geolocation failed:', locationError);
       }
 
-      let updateData: any = {
+      let updateData: TaskUpdate = {
         status: 'completed',
         completed_at: new Date().toISOString(),
         end_location: location,
@@ -648,18 +664,15 @@ export function WorkerSuperScreen() {
       {/* Табы */}
       <div className="mx-auto max-w-sm px-4 py-3">
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-          {[
-            { id: 'time', label: 'Время' },
-            { id: 'tasks', label: 'Задачи' },
-          ].map((t) => (
+          {tabOptions.map((t) => (
             <button
               key={t.id}
               className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                tab === (t.id as any)
+                tab === t.id
                   ? 'bg-blue-600 text-white shadow'
                   : 'bg-slate-100 text-slate-700'
               }`}
-              onClick={() => setTab(t.id as any)}
+              onClick={() => setTab(t.id)}
             >
               {t.label}
             </button>

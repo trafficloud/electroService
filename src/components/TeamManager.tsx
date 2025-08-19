@@ -256,7 +256,9 @@ export const TeamManager: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-gray-500" />
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSortBy(e.target.value as 'name' | 'hours' | 'tasks' | 'earnings')
+              }
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="name">По имени</option>
