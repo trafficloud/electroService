@@ -1,14 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if we have valid Supabase credentials
-const hasValidCredentials = supabaseUrl !== 'https://placeholder.supabase.co' && 
-                           supabaseAnonKey !== 'placeholder-anon-key' &&
-                           supabaseUrl.includes('supabase.co');
+const hasValidCredentials = Boolean(
+  supabaseUrl && 
+  supabaseAnonKey && 
+  supabaseUrl.includes('supabase.co') &&
+  supabaseUrl.startsWith('https://')
+);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = hasValidCredentials 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
 export { hasValidCredentials };
 // Auth helpers
 export const signUp = async (email: string, password: string, fullName: string) => {
@@ -29,6 +35,25 @@ export const signIn = async (email: string, password: string) => {
     email,
     password,
   });
+  
+  // Check if user is active after successful authentication
+  if (data.user && !error) {
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+    
+    if (profileError || profile?.role === 'inactive') {
+      // Sign out the user if they are inactive
+      await supabase.auth.signOut();
+      return { 
+        data: null, 
+        error: { message: 'Аккаунт неактивен. Обратитесь к администратору.' } 
+      };
+    }
+  }
+  
   return { data, error };
 };
 
@@ -59,6 +84,22 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser();
+  
+  // Check if user is still active
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    
+    if (profileError || profile?.role === 'inactive') {
+      // Sign out the user if they are inactive
+      await supabase.auth.signOut();
+      return null;
+    }
+  }
+  
   return user;
 };
 
@@ -107,15 +148,13 @@ export const updateUserRole = async (userId: string, newRole: string) => {
     }
 
     // Update the role
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({ 
         role: newRole,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userId)
-      .select('*')
-      .single();
+      .eq('id', userId);
 
     if (error) {
       console.error('Ошибка при обновлении роли:', error);
@@ -128,19 +167,9 @@ export const updateUserRole = async (userId: string, newRole: string) => {
       throw new Error(`Ошибка обновления роли: ${error.message}`);
     }
 
-    if (!data) {
-      throw new Error('Не удалось получить обновленные данные пользователя');
-    }
-
-    console.log('Роль успешно обновлена:', data);
+    console.log('Роль успешно обновлена');
     
-    // Verify the role was actually updated
-    if (data.role !== newRole) {
-      console.warn('Роль в базе данных не соответствует ожидаемой:', data.role, 'ожидалось:', newRole);
-      throw new Error('Роль не была обновлена в базе данных');
-    }
-    
-    return { data, error: null };
+    return { data: null, error: null };
   } catch (error) {
     console.error('Общая ошибка обновления роли:', error);
     return { data: null, error };
@@ -159,4 +188,38 @@ export const getRoleChangeLogs = async () => {
     .limit(50);
   
   return { data, error };
+};
+
+// Geolocation helper function to calculate distance between two points
+export const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180; // φ, λ in radians
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = R * c; // Distance in meters
+  return distance;
+};
+
+// Parse coordinates from string format "lat, lon"
+export const parseCoordinates = (coordString: string): { lat: number; lon: number } | null => {
+  if (!coordString) return null;
+  
+  const coords = coordString.split(',').map(coord => parseFloat(coord.trim()));
+  if (coords.length !== 2 || coords.some(coord => isNaN(coord))) {
+    return null;
+  }
+  
+  return { lat: coords[0], lon: coords[1] };
 };

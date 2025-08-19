@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut } from '../lib/supabase';
+import { getAllUsers, updateUserRole, getRoleChangeLogs, signOut, hasValidCredentials, supabase } from '../lib/supabase';
 import { User, RoleChangeLog } from '../types';
+import { EmployeeForm } from './EmployeeForm';
 import { 
   Users, 
   Shield, 
@@ -13,13 +14,25 @@ import {
   Search,
   Filter,
   ChevronDown,
-  History
+  History,
+  Plus,
+  UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+      </div>
+    );
+  }
+
   const [users, setUsers] = useState<User[]>([]);
   const [roleLogs, setRoleLogs] = useState<RoleChangeLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +42,8 @@ export const AdminPanel: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'users' | 'logs'>('users');
   const [updating, setUpdating] = useState(false);
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
 
   useEffect(() => {
     if (profile?.role === 'admin') {
@@ -68,7 +83,7 @@ export const AdminPanel: React.FC = () => {
       setNewRole('');
       
       // Show success message
-      console.log('Роль успешно обновлена в интерфейсе');
+      alert(`Роль пользователя успешно изменена на "${getRoleDisplayName(role)}"`);
     } catch (error) {
       console.error('Error updating role:', error);
       
@@ -83,6 +98,32 @@ export const AdminPanel: React.FC = () => {
       } else {
         alert(`Ошибка при обновлении роли: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
       }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          is_active: !currentStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      await fetchUsers();
+      
+      const statusText = !currentStatus ? 'активирован' : 'деактивирован';
+      console.log(`Пользователь ${statusText}`);
+      alert(`Пользователь успешно ${statusText}`);
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert(`Ошибка при изменении статуса пользователя: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setUpdating(false);
     }
@@ -181,6 +222,14 @@ export const AdminPanel: React.FC = () => {
           {/* Filters */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => setShowEmployeeForm(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Добавить сотрудника</span>
+              </button>
+
               <div className="flex-1 relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                 <input
@@ -233,7 +282,13 @@ export const AdminPanel: React.FC = () => {
                         Роль
                       </th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Статус
+                      </th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Ставка
+                      </th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Паспорт
                       </th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Дата регистрации
@@ -286,21 +341,58 @@ export const AdminPanel: React.FC = () => {
                             </span>
                           )}
                         </td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.is_active && user.role !== 'inactive'
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.is_active && user.role !== 'inactive' ? 'Активен' : 'Неактивен'}
+                          </span>
+                        </td>
                         <td className="py-4 px-6 text-sm text-gray-900">
                           {user.hourly_rate ? `${user.hourly_rate} ₽/ч` : '—'}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-900">
+                          {user.passport_series && user.passport_number 
+                            ? `${user.passport_series} ${user.passport_number}` 
+                            : '—'
+                          }
                         </td>
                         <td className="py-4 px-6 text-sm text-gray-500">
                           {format(new Date(user.created_at), 'dd MMM yyyy', { locale: ru })}
                         </td>
                         <td className="py-4 px-6">
                           {editingUser !== user.id && user.id !== profile?.id && (
-                            <button
-                              onClick={() => startEditing(user.id, user.role)}
-                              className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                              <span className="text-sm">Изменить</span>
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => setEditingEmployee(user)}
+                                disabled={updating}
+                                className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                                <span className="text-sm">Редактировать</span>
+                              </button>
+                              <button
+                                onClick={() => startEditing(user.id, user.role)}
+                                disabled={updating}
+                                className="text-purple-600 hover:text-purple-700 flex items-center space-x-1"
+                              >
+                                <Shield className="w-4 h-4" />
+                                <span className="text-sm">Роль</span>
+                              </button>
+                              <button
+                                onClick={() => toggleUserStatus(user.id, user.role !== 'inactive')}
+                                disabled={updating}
+                                className={`text-sm px-2 py-1 rounded transition-colors ${
+                                  user.is_active && user.role !== 'inactive'
+                                    ? 'text-red-600 hover:text-red-700 hover:bg-red-50' 
+                                    : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                                } ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {user.is_active && user.role !== 'inactive' ? 'Деактивировать' : 'Активировать'}
+                              </button>
+                            </div>
                           )}
                           {user.id === profile?.id && (
                             <span className="text-xs text-gray-400">Это вы</span>
@@ -362,6 +454,29 @@ export const AdminPanel: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Employee Form Modal */}
+      {showEmployeeForm && (
+        <EmployeeForm
+          onClose={() => setShowEmployeeForm(false)}
+          onSuccess={() => {
+            setShowEmployeeForm(false);
+            fetchUsers();
+          }}
+        />
+      )}
+
+      {/* Edit Employee Modal */}
+      {editingEmployee && (
+        <EmployeeForm
+          user={editingEmployee}
+          onClose={() => setEditingEmployee(null)}
+          onSuccess={() => {
+            setEditingEmployee(null);
+            fetchUsers();
+          }}
+        />
       )}
     </div>
   );

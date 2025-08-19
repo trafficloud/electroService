@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, getCurrentLocation, formatLocation } from '../lib/supabase';
+import { supabase, getCurrentLocation, formatLocation, hasValidCredentials } from '../lib/supabase';
 import { WorkSession } from '../types';
 import { Play, Square, Clock, MapPin, DollarSign, Calendar } from 'lucide-react';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
@@ -8,19 +8,31 @@ import { ru } from 'date-fns/locale';
 
 export const TimeTracker: React.FC = () => {
   const { profile } = useAuth();
+
+  if (!hasValidCredentials || !supabase) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-xl font-semibold text-gray-900 mb-2">Ошибка конфигурации</div>
+        <p className="text-gray-600">Система не настроена для работы с базой данных</p>
+      </div>
+    );
+  }
+
   const [currentSession, setCurrentSession] = useState<WorkSession | null>(null);
   const [recentSessions, setRecentSessions] = useState<WorkSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    fetchCurrentSession();
-    fetchRecentSessions();
+    if (profile) {
+      fetchCurrentSession();
+      fetchRecentSessions();
+    }
     
     // Update current time every second
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [profile]);
 
   const fetchCurrentSession = async () => {
     if (!profile) return;
@@ -60,8 +72,20 @@ export const TimeTracker: React.FC = () => {
     
     setLoading(true);
     try {
-      const position = await getCurrentLocation();
-      const location = formatLocation(position);
+      let location = null;
+      
+      try {
+        const position = await getCurrentLocation();
+        location = formatLocation(position);
+      } catch (locationError) {
+        console.warn('Geolocation failed:', locationError);
+        const proceed = confirm(
+          'Не удалось получить GPS координаты. Продолжить без записи местоположения?'
+        );
+        if (!proceed) {
+          return;
+        }
+      }
 
       const { data, error } = await supabase
         .from('work_sessions')
@@ -77,7 +101,7 @@ export const TimeTracker: React.FC = () => {
       setCurrentSession(data);
     } catch (error) {
       console.error('Error starting work:', error);
-      alert('Ошибка при начале работы. Проверьте доступ к геолокации.');
+      alert('Ошибка при начале работы.');
     } finally {
       setLoading(false);
     }
@@ -88,8 +112,21 @@ export const TimeTracker: React.FC = () => {
 
     setLoading(true);
     try {
-      const position = await getCurrentLocation();
-      const location = formatLocation(position);
+      let location = null;
+      
+      try {
+        const position = await getCurrentLocation();
+        location = formatLocation(position);
+      } catch (locationError) {
+        console.warn('Geolocation failed:', locationError);
+        const proceed = confirm(
+          'Не удалось получить GPS координаты. Продолжить без записи местоположения?'
+        );
+        if (!proceed) {
+          return;
+        }
+      }
+      
       const endTime = new Date();
       const startTime = new Date(currentSession.start_time);
       const totalHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
@@ -111,7 +148,7 @@ export const TimeTracker: React.FC = () => {
       fetchRecentSessions();
     } catch (error) {
       console.error('Error ending work:', error);
-      alert('Ошибка при завершении работы. Проверьте доступ к геолокации.');
+      alert('Ошибка при завершении работы.');
     } finally {
       setLoading(false);
     }
