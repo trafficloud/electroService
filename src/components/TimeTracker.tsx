@@ -5,6 +5,7 @@ import { WorkSession } from '../types';
 import { Play, Square, Clock, MapPin, DollarSign, Calendar } from 'lucide-react';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useNotification } from './ui/Notification';
 
 export const TimeTracker: React.FC = () => {
   const { profile } = useAuth();
@@ -12,6 +13,7 @@ export const TimeTracker: React.FC = () => {
   const [recentSessions, setRecentSessions] = useState<WorkSession[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchCurrentSession();
@@ -77,7 +79,7 @@ export const TimeTracker: React.FC = () => {
       setCurrentSession(data);
     } catch (error) {
       console.error('Error starting work:', error);
-      alert('Ошибка при начале работы. Проверьте доступ к геолокации.');
+      notify('Ошибка при начале работы. Проверьте доступ к геолокации.', 'error');
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,7 @@ export const TimeTracker: React.FC = () => {
       fetchRecentSessions();
     } catch (error) {
       console.error('Error ending work:', error);
-      alert('Ошибка при завершении работы. Проверьте доступ к геолокации.');
+      notify('Ошибка при завершении работы. Проверьте доступ к геолокации.', 'error');
     } finally {
       setLoading(false);
     }
